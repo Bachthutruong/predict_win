@@ -1,2 +1,6 @@
-// This route is deprecated and has been disabled to resolve a routing conflict.
-// The main dashboard is now at the root page ('/').
+
+export default function DeprecatedDashboardPage() {
+  // This route is deprecated and has been disabled to resolve a routing conflict.
+  // The main dashboard is now at the root page ('/').
+  return null;
+}
