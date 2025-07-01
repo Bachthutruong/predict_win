@@ -20,5 +20,5 @@ PointTransactionSchema.set('toJSON', {
   },
 });
 
-const PointTransaction = models.PointTransaction || model('PointTransaction', PointTransactionSchema);
+const PointTransaction = models?.PointTransaction || model('PointTransaction', PointTransactionSchema);
 export default PointTransaction;

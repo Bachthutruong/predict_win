@@ -15,5 +15,5 @@ FeedbackSchema.set('toJSON', {
   },
 });
 
-const Feedback = models.Feedback || model('Feedback', FeedbackSchema);
+const Feedback = models?.Feedback || model('Feedback', FeedbackSchema);
 export default Feedback;

@@ -14,5 +14,5 @@ ReferralSchema.set('toJSON', {
   },
 });
 
-const Referral = models.Referral || model('Referral', ReferralSchema);
+const Referral = models?.Referral || model('Referral', ReferralSchema);
 export default Referral;

@@ -3,7 +3,7 @@ import mongoose, { Schema, models, model } from 'mongoose';
 const PredictionSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  imageUrl: { type: String, required: true },
+  imageUrl: { type: String, required: false },
   'data-ai-hint': { type: String },
   answer: { type: String, required: true },
   pointsCost: { type: Number, required: true },
@@ -21,5 +21,5 @@ PredictionSchema.set('toJSON', {
   },
 });
 
-const Prediction = models.Prediction || model('Prediction', PredictionSchema);
+const Prediction = models?.Prediction || model('Prediction', PredictionSchema);
 export default Prediction;

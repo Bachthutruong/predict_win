@@ -2,15 +2,12 @@ import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import MainLayout from '@/components/main-layout';
 
-// This layout file has been disabled to resolve a persistent routing conflict
-// between the (main) and (admin) route groups. The pages within this group
-// will now correctly fall back to the root layout.
-export default async function AuthenticatedLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // This will be handled by middleware, but adding as extra protection
+  // Check authentication and admin role
   const user = await getCurrentUser();
   
   if (!user) {
@@ -30,5 +27,10 @@ export default async function AuthenticatedLayout({
     );
   }
 
+  // Check if user is admin
+  if (user.role !== 'admin') {
+    redirect('/');
+  }
+
   return <MainLayout>{children}</MainLayout>;
-}
+} 

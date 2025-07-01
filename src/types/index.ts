@@ -2,11 +2,18 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'staff' | 'user';
   points: number;
   avatarUrl: string;
   checkInStreak?: number;
   lastCheckIn?: string;
+  isEmailVerified: boolean;
+  referralCode?: string;
+  referredBy?: string;
+  consecutiveCheckIns: number;
+  lastCheckInDate?: string;
+  totalSuccessfulReferrals: number;
+  createdAt: string;
 };
 
 export type Prediction = {
@@ -32,6 +39,8 @@ export type UserPrediction = {
   };
   predictionId: string;
   guess: string;
+  isCorrect: boolean;
+  pointsSpent: number;
   createdAt: string;
 };
 
@@ -57,7 +66,8 @@ export type PointTransaction = {
     | 'referral'
     | 'feedback'
     | 'prediction-win'
-    | 'admin-grant';
+    | 'admin-grant'
+    | 'streak-bonus';
   createdAt: string;
   notes?: string;
 };
@@ -72,6 +82,7 @@ export type Question = {
   displayCount: number;
   correctAnswerCount: number;
   points: number;
+  createdAt: string;
 };
 
 export type Referral = {
@@ -80,4 +91,44 @@ export type Referral = {
   referredUserId: string;
   referredUser: { name: string; createdAt: string };
   status: 'pending' | 'completed'; // completed after 3 days check-in
+  createdAt: string;
+};
+
+export type CheckIn = {
+  id: string;
+  userId: string;
+  questionId: string;
+  answer: string;
+  isCorrect: boolean;
+  pointsEarned: number;
+  checkInDate: string;
+  createdAt: string;
+};
+
+export type SystemSettings = {
+  id: string;
+  settingKey: string;
+  settingValue: number;
+  description: string;
+};
+
+// Auth related types
+export type AuthUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'staff' | 'user';
+  isEmailVerified: boolean;
+};
+
+export type LoginCredentials = {
+  email: string;
+  password: string;
+};
+
+export type RegisterData = {
+  name: string;
+  email: string;
+  password: string;
+  referralCode?: string;
 };

@@ -3,7 +3,7 @@ import { Activity, CreditCard, DollarSign, Users } from "lucide-react";
 import { getDashboardStats, getPredictions } from "@/app/actions";
 import { PredictionCard } from "@/components/prediction-card";
 
-export default async function DashboardPage() {
+export default async function HomePage() {
   const stats = await getDashboardStats();
   const allPredictions = await getPredictions();
   const activePredictions = allPredictions.filter(p => p.status === 'active');
@@ -78,5 +78,5 @@ export default async function DashboardPage() {
         </div>
       </div>
     </div>
-  )
-}
+  );
+} 
