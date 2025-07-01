@@ -189,6 +189,32 @@ export async function createPredictionAction(data: {
   }
 }
 
+export async function updatePredictionAction(predictionId: string, data: {
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+  answer?: string;
+  pointsCost?: number;
+  status?: 'active' | 'finished';
+}): Promise<{success: boolean, message?: string}> {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      throw new Error('Admin access required');
+    }
+
+    await dbConnect();
+    await Prediction.findByIdAndUpdate(predictionId, data);
+
+    revalidatePath('/admin-predictions');
+    revalidatePath('/predictions');
+    return { success: true };
+  } catch (error) {
+    console.error('Update prediction error:', error);
+    return { success: false, message: 'Failed to update prediction' };
+  }
+}
+
 export async function submitPredictionAction(predictionId: string, guess: string): Promise<{success: boolean, message?: string, isCorrect?: boolean}> {
   try {
     const user = await getCurrentUser();
@@ -867,8 +893,8 @@ export async function deleteStaffAction(staffId: string): Promise<{success: bool
 export async function getAllUsers(): Promise<UserType[]> {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'admin') {
-      throw new Error('Admin access required');
+    if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
+      throw new Error('Admin or staff access required');
     }
 
     await dbConnect();

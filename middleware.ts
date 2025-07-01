@@ -6,7 +6,10 @@ import { verifyToken } from '@/lib/auth-middleware';
 const publicRoutes = ['/login', '/register', '/verify-email'];
 
 // Define admin-only routes
-const adminRoutes = ['/admin-predictions', '/admin-feedback', '/questions', '/grant-points'];
+const adminRoutes = ['/admin-predictions', '/admin-feedback', '/questions', '/grant-points', '/staff', '/users'];
+
+// Define staff-only routes  
+const staffRoutes = ['/staff-predictions', '/staff-questions', '/staff-users'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,9 +37,10 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // For admin routes, we need to check user role
+  // For admin and staff routes, we need to check user role
   // Note: This is a basic check. In a real app, you'd want to fetch user role from DB
-  if (adminRoutes.some(route => pathname.startsWith(route))) {
+  if (adminRoutes.some(route => pathname.startsWith(route)) || 
+      staffRoutes.some(route => pathname.startsWith(route))) {
     // Here you would typically fetch the user from the database to check their role
     // For now, we'll let the server-side component handle this check
   }

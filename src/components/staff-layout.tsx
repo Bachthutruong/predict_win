@@ -11,12 +11,8 @@ import {
   Trophy,
   Users,
   Lightbulb,
-  ShieldCheck,
-  Gift,
   HelpCircle,
-  Coins,
   Menu,
-  X
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Icons } from '@/components/icons';
@@ -25,7 +21,7 @@ import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { getUserProfileData } from '@/app/actions';
 import type { User } from '@/types';
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default function StaffLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,24 +43,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   const navItems = [
-    { href: '/', label: 'Trang chủ', icon: LayoutDashboard },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/predictions', label: 'Dự đoán', icon: Trophy },
     { href: '/check-in', label: 'Điểm danh', icon: CheckSquare },
-    { href: '/referrals', label: 'Giới thiệu', icon: Gift },
     { href: '/feedback', label: 'Góp ý', icon: Lightbulb },
   ];
-
-  const adminNavItems = [
-    { href: '/admin-predictions', label: 'Quản lý dự đoán', icon: Trophy },
-    { href: '/questions', label: 'Quản lý câu hỏi', icon: HelpCircle },
-    { href: '/staff', label: 'Quản lý nhân viên', icon: Users },
-    { href: '/users', label: 'Quản lý người dùng', icon: Users },
-    { href: '/grant-points', label: 'Tặng điểm', icon: Coins },
-    { href: '/admin-feedback', label: 'Xem góp ý', icon: ShieldCheck },
-  ];
-
-  const isAdmin = user?.role === 'admin';
-  const isStaff = user?.role === 'staff';
 
   const staffNavItems = [
     { href: '/staff-predictions', label: 'Quản lý dự đoán', icon: Trophy },
@@ -91,59 +74,28 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         ))}
       </nav>
       
-      {isAdmin && (
-        <>
-          <div className="my-4 px-4">
-            <div className="h-px w-full bg-border" />
-          </div>
-          <nav className="grid items-start gap-1 px-4 text-sm font-medium">
-            <p className="px-3 py-2 text-xs font-semibold text-muted-foreground/80">
-              Quản trị viên
-            </p>
-            {adminNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  pathname.startsWith(item.href) && 'bg-accent text-primary'
-                )}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </>
-      )}
-
-      {isStaff && (
-        <>
-          <div className="my-4 px-4">
-            <div className="h-px w-full bg-border" />
-          </div>
-          <nav className="grid items-start gap-1 px-4 text-sm font-medium">
-            <p className="px-3 py-2 text-xs font-semibold text-muted-foreground/80">
-              Nhân viên
-            </p>
-            {staffNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  pathname.startsWith(item.href) && 'bg-accent text-primary'
-                )}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </>
-      )}
+      <div className="my-4 px-4">
+        <div className="h-px w-full bg-border" />
+      </div>
+      <nav className="grid items-start gap-1 px-4 text-sm font-medium">
+        <p className="px-3 py-2 text-xs font-semibold text-muted-foreground/80">
+          Nhân viên
+        </p>
+        {staffNavItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+              pathname.startsWith(item.href) && 'bg-accent text-primary'
+            )}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 
@@ -207,4 +159,4 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </div>
     </div>
   );
-}
+} 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -25,20 +25,28 @@ export function UserNav() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const { user: userData } = await getUserProfileData();
-        setUser(userData as User);
-      } catch (error) {
-        console.error('Failed to load user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUser();
+  const loadUser = useCallback(async () => {
+    try {
+      const { user: userData } = await getUserProfileData();
+      setUser(userData as User);
+    } catch (error) {
+      console.error('Failed to load user:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
+  // Expose refresh function globally
+  useEffect(() => {
+    (window as any).refreshUserData = loadUser;
+    return () => {
+      delete (window as any).refreshUserData;
+    };
+  }, [loadUser]);
 
   const handleLogout = async () => {
     try {

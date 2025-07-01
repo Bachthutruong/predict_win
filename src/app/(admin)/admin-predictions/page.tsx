@@ -10,19 +10,28 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Plus, Edit, Clock, CheckCircle, Coins, Image as ImageIcon } from 'lucide-react';
+import { Trophy, Plus, Edit, Edit2, Clock, CheckCircle, Coins, Image as ImageIcon } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/image-upload';
-import { createPredictionAction, getAllPredictions } from '@/app/actions';
+import { createPredictionAction, updatePredictionAction, getAllPredictions } from '@/app/actions';
 import type { Prediction } from '@/types';
 
 export default function AdminPredictionsPage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPrediction, setEditingPrediction] = useState<Prediction | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{success: boolean, message?: string} | null>(null);
   
   const [newPrediction, setNewPrediction] = useState({
+    title: '',
+    description: '',
+    imageUrl: '',
+    answer: '',
+    pointsCost: 10,
+  });
+
+  const [editPrediction, setEditPrediction] = useState({
     title: '',
     description: '',
     imageUrl: '',
@@ -74,6 +83,42 @@ export default function AdminPredictionsPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPrediction) return;
+
+    setIsSubmitting(true);
+    setResult(null);
+
+    try {
+      const response = await updatePredictionAction(editingPrediction.id, editPrediction);
+      
+      if (response.success) {
+        setResult({ success: true, message: 'Prediction updated successfully!' });
+        setEditingPrediction(null);
+        loadPredictions();
+      } else {
+        setResult({ success: false, message: response.message || 'Failed to update prediction' });
+      }
+    } catch (error) {
+      console.error('Update prediction error:', error);
+      setResult({ success: false, message: 'An error occurred. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openEditDialog = (prediction: Prediction) => {
+    setEditingPrediction(prediction);
+    setEditPrediction({
+      title: prediction.title,
+      description: prediction.description,
+      imageUrl: prediction.imageUrl || '',
+      answer: prediction.answer,
+      pointsCost: prediction.pointsCost,
+    });
   };
 
   const activePredictions = predictions.filter(p => p.status === 'active');
@@ -265,7 +310,11 @@ export default function AdminPredictionsPage() {
               {activePredictions.length > 0 ? (
                 <div className="space-y-4">
                   {activePredictions.map((prediction) => (
-                    <PredictionCard key={prediction.id} prediction={prediction} />
+                    <PredictionCard 
+                      key={prediction.id} 
+                      prediction={prediction} 
+                      onEdit={openEditDialog}
+                    />
                   ))}
                 </div>
               ) : (
@@ -290,7 +339,11 @@ export default function AdminPredictionsPage() {
               {finishedPredictions.length > 0 ? (
                 <div className="space-y-4">
                   {finishedPredictions.map((prediction) => (
-                    <PredictionCard key={prediction.id} prediction={prediction} />
+                    <PredictionCard 
+                      key={prediction.id} 
+                      prediction={prediction} 
+                      onEdit={openEditDialog}
+                    />
                   ))}
                 </div>
               ) : (
@@ -315,7 +368,11 @@ export default function AdminPredictionsPage() {
               {predictions.length > 0 ? (
                 <div className="space-y-4">
                   {predictions.map((prediction) => (
-                    <PredictionCard key={prediction.id} prediction={prediction} />
+                    <PredictionCard 
+                      key={prediction.id} 
+                      prediction={prediction} 
+                      onEdit={openEditDialog}
+                    />
                   ))}
                 </div>
               ) : (
@@ -328,11 +385,112 @@ export default function AdminPredictionsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingPrediction} onOpenChange={(open) => !open && setEditingPrediction(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Prediction</DialogTitle>
+            <DialogDescription>
+              Update the prediction details.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            {result && (
+              <Alert variant={result.success ? 'default' : 'destructive'}>
+                <AlertDescription>{result.message}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title *</Label>
+              <Input
+                id="edit-title"
+                value={editPrediction.title}
+                onChange={(e) => setEditPrediction(prev => ({...prev, title: e.target.value}))}
+                placeholder="Enter prediction title..."
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description *</Label>
+              <Textarea
+                id="edit-description"
+                value={editPrediction.description}
+                onChange={(e) => setEditPrediction(prev => ({...prev, description: e.target.value}))}
+                placeholder="Describe the prediction question..."
+                required
+                disabled={isSubmitting}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Prediction Image</Label>
+              <ImageUpload
+                value={editPrediction.imageUrl}
+                onChange={(url) => setEditPrediction(prev => ({...prev, imageUrl: url}))}
+                disabled={isSubmitting}
+                placeholder="Upload prediction image"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-answer">Correct Answer *</Label>
+              <Input
+                id="edit-answer"
+                value={editPrediction.answer}
+                onChange={(e) => setEditPrediction(prev => ({...prev, answer: e.target.value}))}
+                placeholder="Enter the correct answer..."
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-pointsCost">Entry Cost (Points) *</Label>
+              <Input
+                id="edit-pointsCost"
+                type="number"
+                min="1"
+                max="1000"
+                value={editPrediction.pointsCost}
+                onChange={(e) => setEditPrediction(prev => ({...prev, pointsCost: parseInt(e.target.value) || 10}))}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setEditingPrediction(null)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Updating...' : 'Update Prediction'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function PredictionCard({ prediction }: { prediction: Prediction }) {
+function PredictionCard({ 
+  prediction, 
+  onEdit 
+}: { 
+  prediction: Prediction;
+  onEdit: (prediction: Prediction) => void;
+}) {
   return (
     <div className="flex items-start gap-4 p-4 border rounded-lg">
       {/* Image */}
@@ -380,6 +538,15 @@ function PredictionCard({ prediction }: { prediction: Prediction }) {
             {prediction.winnerId && (
               <span className="text-green-600">Winner found!</span>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(prediction)}
+              className="ml-2"
+            >
+              <Edit2 className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
           </div>
         </div>
       </div>

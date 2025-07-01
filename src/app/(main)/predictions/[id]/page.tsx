@@ -64,6 +64,11 @@ export default function PredictionDetailPage() {
         setPrediction(data.prediction);
         setUserPredictions(data.userPredictions);
         setCurrentUserPrediction(data.currentUserPrediction || null);
+        
+        // Refresh user points in navigation
+        if ((window as any).refreshUserData) {
+          (window as any).refreshUserData();
+        }
       }
     } catch (error) {
       console.error('Submit prediction error:', error);

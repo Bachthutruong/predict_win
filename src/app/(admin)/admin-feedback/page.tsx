@@ -55,6 +55,11 @@ export default function AdminFeedbackPage() {
       setApproveDialogOpen(false);
       setSelectedFeedback(null);
       loadFeedback();
+      
+      // Refresh user points in navigation
+      if ((window as any).refreshUserData) {
+        (window as any).refreshUserData();
+      }
     } catch (error) {
       console.error('Failed to approve feedback:', error);
     } finally {

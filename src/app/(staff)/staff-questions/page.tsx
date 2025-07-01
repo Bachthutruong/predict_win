@@ -21,13 +21,14 @@ import {
   CheckCircle, 
   XCircle, 
   Coins,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Shield
 } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { createQuestionAction, updateQuestionAction, getQuestions } from '@/app/actions';
 import type { Question } from '@/types';
 
-export default function QuestionsPage() {
+export default function StaffQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -87,7 +88,7 @@ export default function QuestionsPage() {
         setIsCreateDialogOpen(false);
         loadQuestions();
       } else {
-        setResult({ success: false, message: response.message || 'Failed to create question' });
+        setResult({ success: false, message: 'Failed to create question' });
       }
     } catch (error) {
       console.error('Create question error:', error);
@@ -105,7 +106,15 @@ export default function QuestionsPage() {
     setResult(null);
 
     try {
-      const response = await updateQuestionAction(editingQuestion.id, editQuestion);
+      // Staff cannot modify points, so we exclude it from the update
+      const updateData = {
+        questionText: editQuestion.questionText,
+        imageUrl: editQuestion.imageUrl,
+        answer: editQuestion.answer,
+        isPriority: editQuestion.isPriority,
+      };
+
+      const response = await updateQuestionAction(editingQuestion.id, updateData);
       
       if (response.success) {
         setResult({ success: true, message: 'Question updated successfully!' });
@@ -120,17 +129,6 @@ export default function QuestionsPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const openEditDialog = (question: Question) => {
-    setEditingQuestion(question);
-    setEditQuestion({
-      questionText: question.questionText,
-      imageUrl: question.imageUrl || '',
-      answer: question.answer,
-      isPriority: question.isPriority,
-      points: question.points,
-    });
   };
 
   const handleStatusToggle = async (questionId: string, currentStatus: string) => {
@@ -152,6 +150,17 @@ export default function QuestionsPage() {
     }
   };
 
+  const openEditDialog = (question: Question) => {
+    setEditingQuestion(question);
+    setEditQuestion({
+      questionText: question.questionText,
+      imageUrl: question.imageUrl || '',
+      answer: question.answer,
+      isPriority: question.isPriority,
+      points: question.points, // Will be disabled
+    });
+  };
+
   const activeQuestions = questions.filter(q => q.status === 'active');
   const inactiveQuestions = questions.filter(q => q.status === 'inactive');
   const priorityQuestions = questions.filter(q => q.isPriority);
@@ -162,11 +171,13 @@ export default function QuestionsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <HelpCircle className="h-8 w-8 text-primary" />
-            Admin: Manage Questions
+            <Shield className="h-8 w-8 text-primary" />
+            Staff: Manage Questions
           </h1>
           <p className="text-muted-foreground mt-2">
             Create and manage questions for daily check-ins
+            <br />
+            <span className="text-orange-600 font-medium">Note: Staff cannot modify point rewards (admin-only)</span>
           </p>
         </div>
         
@@ -244,8 +255,12 @@ export default function QuestionsPage() {
                     value={newQuestion.points}
                     onChange={(e) => setNewQuestion(prev => ({...prev, points: parseInt(e.target.value) || 10}))}
                     required
-                    disabled={isSubmitting}
+                    disabled={true} // Staff cannot modify points
+                    className="bg-muted"
                   />
+                  <p className="text-xs text-orange-600">
+                    Staff cannot modify check-in points.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -347,7 +362,7 @@ export default function QuestionsPage() {
         </TabsList>
 
         <TabsContent value="active">
-          <QuestionsList 
+          <StaffQuestionsList 
             questions={activeQuestions} 
             onStatusToggle={handleStatusToggle}
             onPriorityToggle={handlePriorityToggle}
@@ -358,7 +373,7 @@ export default function QuestionsPage() {
         </TabsContent>
 
         <TabsContent value="inactive">
-          <QuestionsList 
+          <StaffQuestionsList 
             questions={inactiveQuestions} 
             onStatusToggle={handleStatusToggle}
             onPriorityToggle={handlePriorityToggle}
@@ -369,7 +384,7 @@ export default function QuestionsPage() {
         </TabsContent>
 
         <TabsContent value="priority">
-          <QuestionsList 
+          <StaffQuestionsList 
             questions={priorityQuestions} 
             onStatusToggle={handleStatusToggle}
             onPriorityToggle={handlePriorityToggle}
@@ -380,7 +395,7 @@ export default function QuestionsPage() {
         </TabsContent>
 
         <TabsContent value="all">
-          <QuestionsList 
+          <StaffQuestionsList 
             questions={questions} 
             onStatusToggle={handleStatusToggle}
             onPriorityToggle={handlePriorityToggle}
@@ -397,7 +412,7 @@ export default function QuestionsPage() {
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
             <DialogDescription>
-              Update the question details.
+              Update the question details. Point rewards cannot be modified by staff.
             </DialogDescription>
           </DialogHeader>
           
@@ -449,13 +464,13 @@ export default function QuestionsPage() {
                 <Input
                   id="edit-points"
                   type="number"
-                  min="1"
-                  max="100"
                   value={editQuestion.points}
-                  onChange={(e) => setEditQuestion(prev => ({...prev, points: parseInt(e.target.value) || 10}))}
-                  required
-                  disabled={isSubmitting}
+                  disabled={true} // Staff cannot modify points
+                  className="bg-muted"
                 />
+                <p className="text-xs text-orange-600">
+                  Staff cannot modify check-in points.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -494,7 +509,7 @@ export default function QuestionsPage() {
   );
 }
 
-function QuestionsList({ 
+function StaffQuestionsList({ 
   questions, 
   onStatusToggle, 
   onPriorityToggle, 
@@ -515,7 +530,7 @@ function QuestionsList({
         {questions.length > 0 ? (
           <div className="space-y-4">
             {questions.map((question) => (
-              <QuestionCard 
+              <StaffQuestionCard 
                 key={question.id} 
                 question={question}
                 onStatusToggle={onStatusToggle}
@@ -535,7 +550,7 @@ function QuestionsList({
   );
 }
 
-function QuestionCard({ 
+function StaffQuestionCard({ 
   question, 
   onStatusToggle, 
   onPriorityToggle,
@@ -648,4 +663,4 @@ function QuestionCard({
       </div>
     </div>
   );
-}
+} 

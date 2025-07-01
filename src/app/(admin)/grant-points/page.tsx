@@ -75,6 +75,11 @@ export default function GrantPointsPage() {
       });
       setIsDialogOpen(false);
       loadData(); // Refresh the data
+      
+      // Refresh user points in navigation
+      if ((window as any).refreshUserData) {
+        (window as any).refreshUserData();
+      }
     } catch (error) {
       console.error('Grant points error:', error);
       setResult({ success: false, message: 'Failed to grant points. Please try again.' });

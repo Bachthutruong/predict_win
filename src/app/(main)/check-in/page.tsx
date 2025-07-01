@@ -62,6 +62,11 @@ export default function CheckInPage() {
         // Refresh user data to get updated points and streak
         const userData = await getUserProfileData();
         setUser(userData.user as User);
+        
+        // Refresh user points in navigation
+        if ((window as any).refreshUserData) {
+          (window as any).refreshUserData();
+        }
       }
     } catch (error) {
       console.error('Check-in error:', error);
