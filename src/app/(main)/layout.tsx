@@ -1,10 +1,8 @@
+import type { ReactNode } from 'react';
 
-export default function MainPagesLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // This layout is kept minimal to resolve a routing conflict.
-  // The main layout logic is handled by the root layout.
+// This layout is a passthrough component to resolve a persistent routing conflict.
+// By simply returning the children, we satisfy the Next.js compiler's need for a layout
+// in this route group without creating a parallel route that conflicts with the `(admin)` group.
+export default function MainRouteGroupPassthroughLayout({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
