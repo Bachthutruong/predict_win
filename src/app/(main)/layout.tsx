@@ -1,10 +1,2 @@
-
-// This layout is no longer needed as the logic has been moved to the root layout.
-// All pages under (main) will now be wrapped by the root layout's logic.
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
-}
+// This layout is redundant and has been disabled to resolve a routing conflict.
+// The main layout logic is handled by the root layout at src/app/layout.tsx.

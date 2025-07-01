@@ -14,6 +14,7 @@ export type Prediction = {
   title: string;
   description: string;
   imageUrl: string;
+  'data-ai-hint'?: string;
   answer: string;
   pointsCost: number;
   status: 'active' | 'finished';
