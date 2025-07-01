@@ -1,9 +1,11 @@
+import { getQuestions } from "@/app/actions";
 import { QuestionsTable } from "@/components/admin/questions-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockQuestions } from "@/lib/data";
 
-export default function AdminQuestionsPage() {
+export default async function AdminQuestionsPage() {
+    const questions = await getQuestions();
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-start">
@@ -20,7 +22,7 @@ export default function AdminQuestionsPage() {
                     <CardDescription>A list of all questions for the daily check-in.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <QuestionsTable questions={mockQuestions} />
+                    <QuestionsTable questions={questions} />
                 </CardContent>
             </Card>
         </div>

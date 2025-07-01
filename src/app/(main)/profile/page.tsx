@@ -1,13 +1,16 @@
+import { getUserProfileData } from "@/app/actions";
 import { UserPointsHistoryTable } from "@/components/user-points-history-table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockPointTransactions, users } from "@/lib/data";
 import { Coins, Mail, User as UserIcon } from "lucide-react";
 
 
-export default function ProfilePage() {
-    const user = users[1]; // Mock current user
-    const userTransactions = mockPointTransactions.filter(t => t.userId === user.id);
+export default async function ProfilePage() {
+    const { user, transactions } = await getUserProfileData();
+
+    if (!user) {
+        return <div>User not found.</div>
+    }
 
     return (
         <div className="space-y-6">
@@ -49,7 +52,7 @@ export default function ProfilePage() {
                     <CardDescription>A log of all your point transactions.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <UserPointsHistoryTable transactions={userTransactions} />
+                    <UserPointsHistoryTable transactions={transactions} />
                 </CardContent>
             </Card>
         </div>

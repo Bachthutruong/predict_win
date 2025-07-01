@@ -1,12 +1,17 @@
+import { getReferralsData } from "@/app/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Copy, Gift, UserCheck, UserPlus } from "lucide-react";
 import { ReferralsTable } from "@/components/referrals-table";
-import { mockReferrals, users } from "@/lib/data";
 
-export default function ReferralsPage() {
-    const currentUser = users[1]; // Mock current user
+export default async function ReferralsPage() {
+    const { referrals, currentUser } = await getReferralsData();
+    
+    if (!currentUser) {
+        return <div>User not found. Please log in.</div>;
+    }
+
     const referralCode = `REF-${currentUser.id}-${currentUser.name.toUpperCase().slice(0,3)}`;
 
     return (
@@ -40,7 +45,7 @@ export default function ReferralsPage() {
                         <UserCheck className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">1</div>
+                        <div className="text-2xl font-bold">{referrals.filter(r => r.status === 'completed').length}</div>
                         <p className="text-xs text-muted-foreground">Completed 3-day check-in</p>
                     </CardContent>
                 </Card>
@@ -50,7 +55,7 @@ export default function ReferralsPage() {
                         <UserPlus className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">1</div>
+                        <div className="text-2xl font-bold">{referrals.filter(r => r.status === 'pending').length}</div>
                         <p className="text-xs text-muted-foreground">Signed up, activity pending</p>
                     </CardContent>
                 </Card>
@@ -72,7 +77,7 @@ export default function ReferralsPage() {
                     <CardDescription>A list of users you've referred.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                   <ReferralsTable referrals={mockReferrals} />
+                   <ReferralsTable referrals={referrals} />
                 </CardContent>
             </Card>
         </div>

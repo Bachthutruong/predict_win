@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +27,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/types";
 import { Textarea } from "../ui/textarea";
+import { grantPointsAction } from "@/app/actions";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   userId: z.string().min(1, "Please select a user."),
@@ -39,6 +44,9 @@ type GrantPointsFormProps = {
 
 export function GrantPointsForm({ users }: GrantPointsFormProps) {
   const { toast } = useToast();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,14 +56,28 @@ export function GrantPointsForm({ users }: GrantPointsFormProps) {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
     const selectedUser = users.find(u => u.id === values.userId);
-    console.log(values);
-    toast({
-      title: "Points Granted!",
-      description: `${values.amount} points have been granted to ${selectedUser?.name}.`,
-    });
-    form.reset();
+    
+    try {
+        await grantPointsAction(values);
+        toast({
+          title: "Points Granted!",
+          description: `${values.amount} points have been granted to ${selectedUser?.name}.`,
+        });
+        form.reset();
+        router.refresh();
+    } catch (error) {
+        console.error(error);
+        toast({
+            title: "Error",
+            description: "Failed to grant points. Please check the logs.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
@@ -73,7 +95,7 @@ export function GrantPointsForm({ users }: GrantPointsFormProps) {
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>User</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a user to grant points" />
@@ -99,7 +121,7 @@ export function GrantPointsForm({ users }: GrantPointsFormProps) {
                             <FormItem>
                                 <FormLabel>Amount</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="100" {...field} />
+                                    <Input type="number" placeholder="100" {...field} disabled={isLoading} />
                                 </FormControl>
                                 <FormDescription>
                                     Enter a positive number to add points, or a negative number to subtract.
@@ -116,7 +138,7 @@ export function GrantPointsForm({ users }: GrantPointsFormProps) {
                                 <FormItem>
                                     <FormLabel>Notes (Optional)</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="e.g., Welcome bonus, refund for prediction..." {...field} />
+                                        <Textarea placeholder="e.g., Welcome bonus, refund for prediction..." {...field} disabled={isLoading} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -124,7 +146,10 @@ export function GrantPointsForm({ users }: GrantPointsFormProps) {
                             />
                         </div>
                     </div>
-                    <Button type="submit">Grant Points</Button>
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Grant Points
+                    </Button>
                 </form>
             </Form>
         </CardContent>

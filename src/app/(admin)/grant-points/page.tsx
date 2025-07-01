@@ -1,9 +1,12 @@
+import { getPointTransactions, getUsers } from "@/app/actions";
 import { GrantPointsForm } from "@/components/admin/grant-points-form";
 import { PointTransactionsTable } from "@/components/admin/point-transactions-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockPointTransactions, users } from "@/lib/data";
 
-export default function GrantPointsPage() {
+export default async function GrantPointsPage() {
+    const users = await getUsers();
+    const transactions = await getPointTransactions();
+
     return (
         <div className="space-y-6">
             <div>
@@ -19,7 +22,7 @@ export default function GrantPointsPage() {
                     <CardDescription>A log of all recent manual point adjustments.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <PointTransactionsTable transactions={mockPointTransactions} />
+                    <PointTransactionsTable transactions={transactions} />
                 </CardContent>
             </Card>
         </div>

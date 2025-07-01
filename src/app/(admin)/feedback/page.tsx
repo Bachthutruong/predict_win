@@ -1,8 +1,10 @@
+import { getFeedbackItems } from "@/app/actions";
 import { FeedbackTable } from "@/components/admin/feedback-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockFeedback } from "@/lib/data";
 
-export default function AdminFeedbackPage() {
+export default async function AdminFeedbackPage() {
+    const feedbackItems = await getFeedbackItems();
+
     return (
         <div className="space-y-6">
             <div>
@@ -15,7 +17,7 @@ export default function AdminFeedbackPage() {
                     <CardDescription>All feedback submitted by users.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <FeedbackTable feedbackItems={mockFeedback} />
+                    <FeedbackTable feedbackItems={feedbackItems} />
                 </CardContent>
             </Card>
         </div>

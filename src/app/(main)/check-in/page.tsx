@@ -1,8 +1,10 @@
+import { getActiveQuestion } from "@/app/actions";
 import { CheckinCard } from "@/components/checkin-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { History } from "lucide-react";
 
-export default function CheckinPage() {
+export default async function CheckinPage() {
+    const question = await getActiveQuestion();
+
     return (
         <div className="space-y-8">
             <div>
@@ -14,7 +16,7 @@ export default function CheckinPage() {
 
             <div className="grid gap-8 md:grid-cols-3">
                 <div className="md:col-span-2">
-                    <CheckinCard />
+                    <CheckinCard question={question} />
                 </div>
                 <div className="md:col-span-1">
                     <Card>

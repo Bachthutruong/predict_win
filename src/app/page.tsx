@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, CreditCard, DollarSign, Users } from "lucide-react";
-import { mockPredictions } from "@/lib/data";
+import { getDashboardStats, getPredictions } from "@/app/actions";
 import { PredictionCard } from "@/components/prediction-card";
 
-export default function DashboardPage() {
-  const activePredictions = mockPredictions.filter(p => p.status === 'active');
+export default async function DashboardPage() {
+  const stats = await getDashboardStats();
+  const allPredictions = await getPredictions();
+  const activePredictions = allPredictions.filter(p => p.status === 'active');
 
   return (
     <div className="flex flex-col gap-8">
@@ -21,9 +23,9 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">45,231</div>
+            <div className="text-2xl font-bold">{stats.totalPointsAwarded.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              All time points awarded
             </p>
           </CardContent>
         </Card>
@@ -35,9 +37,9 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
+            <div className="text-2xl font-bold">+{stats.activeUsers.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +180.1% from last month
+              Currently on the platform
             </p>
           </CardContent>
         </Card>
@@ -47,9 +49,9 @@ export default function DashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activePredictions.length}</div>
+            <div className="text-2xl font-bold">{stats.activePredictions}</div>
             <p className="text-xs text-muted-foreground">
-              +19% from last month
+              Ready for your guess
             </p>
           </CardContent>
         </Card>
@@ -59,9 +61,9 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+5</div>
+            <div className="text-2xl font-bold">+{stats.pendingFeedback}</div>
             <p className="text-xs text-muted-foreground">
-              +2 since last hour
+              Awaiting admin review
             </p>
           </CardContent>
         </Card>

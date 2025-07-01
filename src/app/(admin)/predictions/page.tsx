@@ -1,9 +1,11 @@
+import { getPredictions } from "@/app/actions";
 import { PredictionsTable } from "@/components/admin/predictions-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockPredictions } from "@/lib/data";
 
-export default function AdminPredictionsPage() {
+export default async function AdminPredictionsPage() {
+    const predictions = await getPredictions();
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-start">
@@ -20,7 +22,7 @@ export default function AdminPredictionsPage() {
                     <CardDescription>A list of all active and finished predictions.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <PredictionsTable predictions={mockPredictions} />
+                    <PredictionsTable predictions={predictions} />
                 </CardContent>
             </Card>
         </div>
