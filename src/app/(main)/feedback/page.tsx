@@ -1,3 +1,4 @@
+
 // This page is disabled to resolve a build conflict.
 //
 // The root cause is a folder structure issue: `src/app/(admin)` is a
