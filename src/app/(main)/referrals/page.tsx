@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Gift, 
   Copy, 
@@ -21,6 +22,95 @@ import {
 } from 'lucide-react';
 import { getReferralsData } from '@/app/actions';
 import type { Referral, User } from '@/types';
+
+// Referrals Page Skeleton
+function ReferralsPageSkeleton() {
+  return (
+    <div className="mx-auto space-y-8">
+      {/* Header Skeleton */}
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-2">
+          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-9 w-48" />
+        </div>
+        <Skeleton className="h-4 w-80 mx-auto" />
+      </div>
+
+      {/* Stats Cards Skeleton */}
+      <div className="grid gap-4 md:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16 mb-1" />
+              <Skeleton className="h-3 w-20" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Referral Code Section Skeleton */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-6 w-40" />
+          </div>
+          <Skeleton className="h-4 w-64" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-10 flex-1" />
+              <Skeleton className="h-10 w-10" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-10 flex-1" />
+              <Skeleton className="h-10 w-10" />
+              <Skeleton className="h-10 w-10" />
+            </div>
+          </div>
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
+
+      {/* Referrals List Skeleton */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-6 w-32" />
+          </div>
+          <Skeleton className="h-4 w-48" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <div className="text-right space-y-1">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function ReferralsPage() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
@@ -89,17 +179,9 @@ export default function ReferralsPage() {
   const nextMilestone = Math.ceil(completedReferrals / 10) * 10;
   const pointsToNextMilestone = nextMilestone - completedReferrals;
 
+  // Show skeleton while loading
   if (isLoading) {
-    return (
-      <div className="mx-auto">
-        <Card>
-          <CardContent className="text-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading your referrals...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <ReferralsPageSkeleton />;
   }
 
   if (!currentUser) {

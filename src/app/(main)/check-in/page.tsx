@@ -7,9 +7,86 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, CheckCircle, Coins, Flame, Trophy } from 'lucide-react';
 import { getActiveQuestion, checkInAction, getUserProfileData } from '@/app/actions';
 import type { Question, User } from '@/types';
+
+// Check-in Skeleton Component
+function CheckInSkeleton() {
+  return (
+    <div className="mx-auto space-y-6">
+      {/* Header Skeleton */}
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-2">
+          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-9 w-48" />
+        </div>
+        <Skeleton className="h-4 w-80 mx-auto" />
+      </div>
+
+      {/* User Stats Skeleton */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="flex items-center gap-3 p-4">
+              <Skeleton className="h-9 w-9 rounded-full" />
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-6 w-16" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Check-in Form Skeleton */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-6 w-36" />
+          </div>
+          <Skeleton className="h-4 w-64" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <Skeleton className="w-full h-48 rounded-lg" />
+            <Skeleton className="h-6 w-full" />
+          </div>
+          
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-4 w-60" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Streak Information Skeleton */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-6 w-32" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function CheckInPage() {
   const [question, setQuestion] = useState<Question | null>(null);
@@ -23,6 +100,7 @@ export default function CheckInPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Parallel data loading for better performance
         const [questionData, userData] = await Promise.all([
           getActiveQuestion(),
           getUserProfileData()
@@ -76,17 +154,9 @@ export default function CheckInPage() {
     }
   };
 
+  // Show skeleton while loading
   if (isLoading) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardContent className="text-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading your daily check-in...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <CheckInSkeleton />;
   }
 
   if (!user) {

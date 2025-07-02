@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, startTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -17,12 +16,54 @@ import {
   Coins,
   LogOut,
   Calendar,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getUserProfileData, logoutAction } from '@/app/actions';
 import { UserNav } from './user-nav';
 import type { User } from '@/types';
+import Link from 'next/link';
+
+// Navigation items
+const navigationItems = [
+  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/predictions', label: 'Predictions', icon: Trophy },
+  { href: '/check-in', label: 'Check In', icon: Calendar },
+  { href: '/profile', label: 'Profile', icon: UserIcon },
+  { href: '/referrals', label: 'Referrals', icon: Users },
+  { href: '/feedback', label: 'Feedback', icon: MessageSquare },
+];
+
+// Optimized Link component with prefetching
+function OptimizedNavLink({ 
+  href, 
+  children, 
+  className, 
+  isActive 
+}: { 
+  href: string; 
+  children: React.ReactNode; 
+  className?: string;
+  isActive?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={className}
+      prefetch={true} // Enable prefetching
+      onMouseEnter={() => {
+        // Prefetch on hover for even faster navigation
+        const router = require('next/router');
+        if (router.prefetch) {
+          router.prefetch(href);
+        }
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,6 +73,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -77,17 +119,37 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   };
 
-  // Only user navigation
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Predictions', href: '/predictions', icon: Trophy },
-    { name: 'Check In', href: '/check-in', icon: Calendar },
-    { name: 'Profile', href: '/profile', icon: UserIcon },
-    { name: 'Referrals', href: '/referrals', icon: Users },
-    { name: 'Feedback', href: '/feedback', icon: MessageSquare },
-  ];
+  // Global refresh function
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      // Refresh user data in UserNav
+      if ((window as any).refreshUserData) {
+        await (window as any).refreshUserData();
+      }
+      
+      // Use startTransition for smooth refresh
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [router]);
 
-  const isActive = (href: string) => {
+  // Preload likely navigation destinations
+  useEffect(() => {
+    const preloadRoutes = ['/predictions', '/check-in', '/profile'];
+    preloadRoutes.forEach(route => {
+      if (route !== pathname) {
+        router.prefetch(route);
+      }
+    });
+  }, [pathname, router]);
+
+  const isActivePath = (href: string) => {
     if (href === '/') {
       return pathname === '/';
     }
@@ -108,128 +170,89 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <Trophy className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                PredictWin
-              </span>
-            </div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <LinkWithPreload
-                    key={item.name}
-                    href={item.href}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 hover:bg-white/60 ${
-                      isActive(item.href)
-                        ? 'bg-white shadow-sm text-primary border border-primary/20'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.name}
-                  </LinkWithPreload>
-                );
-              })}
-            </nav>
-
-            {/* User Menu & Mobile Menu */}
-            <div className="flex items-center gap-3">
-              <UserNav />
-
-              {/* Mobile menu trigger */}
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="md:hidden">
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-80">
-                  <div className="py-6">
-                    {/* User Info */}
-                    {user && (
-                      <div className="border-b pb-4 mb-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={user.avatarUrl} alt={user.name} />
-                            <AvatarFallback>
-                              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="font-semibold">{user.name}</h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Coins className="h-3 w-3" />
-                              <span>{user.points} points</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Navigation Links */}
-                    <nav className="space-y-2">
-                      {navigation.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <LinkWithPreload
-                            key={item.name}
-                            href={item.href}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                              isActive(item.href)
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            <Icon className="h-4 w-4" />
-                            {item.name}
-                          </LinkWithPreload>
-                        );
-                      })}
-                    </nav>
-
-                    {/* Logout */}
-                    {user && (
-                      <div className="mt-6 pt-4 border-t">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={handleLogout}
-                          disabled={isLoggingOut}
-                        >
-                          {isLoggingOut ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Logging out...
-                            </>
-                          ) : (
-                            <>
-                              <LogOut className="h-4 w-4 mr-2" />
-                              Logout
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center">
+          {/* Logo */}
+          <div className="mr-6 flex items-center space-x-2">
+            <Trophy className="h-6 w-6 text-primary" />
+            <span className="hidden font-bold sm:inline-block">PredictWin</span>
           </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium flex-1">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = isActivePath(item.href);
+              
+              return (
+                <OptimizedNavLink
+                  key={item.href}
+                  href={item.href}
+                  isActive={isActive}
+                  className={`flex items-center gap-2 transition-colors hover:text-foreground/80 ${
+                    isActive ? 'text-foreground font-semibold' : 'text-foreground/60'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </OptimizedNavLink>
+              );
+            })}
+          </nav>
+
+          {/* Refresh Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="mr-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+
+          {/* User Navigation */}
+          <UserNav />
+
+          {/* Mobile Navigation */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="md:hidden ml-2">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+              <nav className="flex flex-col gap-4 mt-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Trophy className="h-6 w-6 text-primary" />
+                  <span className="font-bold">PredictWin</span>
+                </div>
+                
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = isActivePath(item.href);
+                  
+                  return (
+                    <OptimizedNavLink
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-accent ${
+                        isActive ? 'bg-accent text-accent-foreground font-semibold' : 'text-muted-foreground'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </OptimizedNavLink>
+                  );
+                })}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="container mx-auto px-4 py-8">
         {children}
       </main>
 
