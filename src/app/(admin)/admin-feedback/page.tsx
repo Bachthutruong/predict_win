@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { 
   Lightbulb, 
   CheckCircle, 
@@ -19,7 +20,7 @@ import {
   MessageSquare,
   ThumbsUp,
   ThumbsDown,
-  Eye
+  RefreshCw
 } from 'lucide-react';
 import { getFeedbackItems, approveFeedbackAction, rejectFeedbackAction } from '@/app/actions';
 import type { Feedback } from '@/types';
@@ -31,6 +32,7 @@ export default function AdminFeedbackPage() {
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [awardPoints, setAwardPoints] = useState(50);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadFeedback();
@@ -43,6 +45,11 @@ export default function AdminFeedbackPage() {
       setFeedback(data);
     } catch (error) {
       console.error('Failed to load feedback:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load feedback. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -53,6 +60,10 @@ export default function AdminFeedbackPage() {
     try {
       const result = await approveFeedbackAction(feedbackId, points);
       if (result.success) {
+        toast({
+          title: "Feedback Approved",
+          description: `Successfully awarded ${points} points to the user.`,
+        });
         setApproveDialogOpen(false);
         setSelectedFeedback(null);
         loadFeedback();
@@ -62,12 +73,19 @@ export default function AdminFeedbackPage() {
           (window as any).refreshUserData();
         }
       } else {
-        console.error('Failed to approve feedback:', result.message);
-        alert(result.message || 'Failed to approve feedback');
+        toast({
+          title: "Error", 
+          description: result.message || "Failed to approve feedback",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Failed to approve feedback:', error);
-      alert('An error occurred while approving feedback');
+      toast({
+        title: "Error",
+        description: "An error occurred while approving feedback",
+        variant: "destructive",
+      });
     } finally {
       setProcessingId(null);
     }
@@ -78,14 +96,26 @@ export default function AdminFeedbackPage() {
     try {
       const result = await rejectFeedbackAction(feedbackId);
       if (result.success) {
+        toast({
+          title: "Feedback Rejected",
+          description: "Feedback has been rejected.",
+          variant: "destructive",
+        });
         loadFeedback();
       } else {
-        console.error('Failed to reject feedback:', result.message);
-        alert(result.message || 'Failed to reject feedback');
+        toast({
+          title: "Error",
+          description: result.message || "Failed to reject feedback",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Failed to reject feedback:', error);
-      alert('An error occurred while rejecting feedback');
+      toast({
+        title: "Error",
+        description: "An error occurred while rejecting feedback",
+        variant: "destructive",
+      });
     } finally {
       setProcessingId(null);
     }
@@ -95,23 +125,32 @@ export default function AdminFeedbackPage() {
     return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
   const pendingFeedback = feedback.filter(f => f.status === 'pending');
   const approvedFeedback = feedback.filter(f => f.status === 'approved');
   const rejectedFeedback = feedback.filter(f => f.status === 'rejected');
-
   const totalPointsAwarded = approvedFeedback.reduce((sum, f) => sum + (f.awardedPoints || 0), 0);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Lightbulb className="h-8 w-8 text-primary" />
-          Admin: Review Feedback
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Review user feedback submissions and award points for valuable suggestions
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Lightbulb className="h-8 w-8 text-primary" />
+            Admin: Review Feedback
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Review user feedback submissions and award points for valuable suggestions
+          </p>
+        </div>
+        <Button onClick={loadFeedback} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -368,7 +407,7 @@ function FeedbackList({
   return (
     <div className="space-y-4">
       {feedbackList.map((feedback) => (
-        <div key={feedback.id} className="p-4 border rounded-lg space-y-3">
+        <div key={feedback.id} className="p-4 border rounded-lg space-y-3 hover:shadow-md transition-shadow">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
@@ -416,7 +455,7 @@ function FeedbackList({
                 disabled={processingId === feedback.id}
               >
                 <ThumbsUp className="h-4 w-4 mr-1" />
-                Approve
+                {processingId === feedback.id ? 'Processing...' : 'Approve'}
               </Button>
               <Button
                 size="sm"
@@ -425,7 +464,7 @@ function FeedbackList({
                 disabled={processingId === feedback.id}
               >
                 <ThumbsDown className="h-4 w-4 mr-1" />
-                Reject
+                {processingId === feedback.id ? 'Processing...' : 'Reject'}
               </Button>
             </div>
           )}

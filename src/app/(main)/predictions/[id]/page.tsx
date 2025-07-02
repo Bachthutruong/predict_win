@@ -1,16 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useTransition } from 'react';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Coins, Trophy, Clock, Users, ChevronLeft, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { DashboardLoadingSkeleton } from '@/components/ui/loading-skeleton';
+import { 
+  Trophy, 
+  Coins, 
+  Users, 
+  Clock, 
+  Target, 
+  CheckCircle,
+  XCircle,
+  ArrowLeft,
+  Send,
+  Loader2,
+  RefreshCw
+} from 'lucide-react';
 import Link from 'next/link';
 import { getPredictionDetails, submitPredictionAction } from '@/app/actions';
 import type { Prediction, UserPrediction } from '@/types';
@@ -18,6 +31,7 @@ import type { Prediction, UserPrediction } from '@/types';
 export default function PredictionDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const predictionId = params.id as string;
   const page = parseInt(searchParams.get('page') || '1');
 
@@ -29,346 +43,437 @@ export default function PredictionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [guess, setGuess] = useState('');
-  const [result, setResult] = useState<{success: boolean, message?: string, isCorrect?: boolean} | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const loadPredictionData = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getPredictionDetails(predictionId, page);
-        setPrediction(data.prediction);
-        setUserPredictions(data.userPredictions);
-        setCurrentUserPrediction(data.currentUserPrediction || null);
-        setCurrentUserId(data.currentUserId || null);
-        setTotalPages(data.totalPages);
-      } catch (error) {
-        console.error('Failed to load prediction:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadPredictionData();
   }, [predictionId, page]);
 
+  const loadPredictionData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getPredictionDetails(predictionId, page);
+      setPrediction(data.prediction);
+      setUserPredictions(data.userPredictions);
+      setCurrentUserPrediction(data.currentUserPrediction || null);
+      setCurrentUserId(data.currentUserId || null);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error('Failed to load prediction:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load prediction details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guess.trim()) return;
+    
+    if (!guess.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your prediction",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      const response = await submitPredictionAction(predictionId, guess.trim());
-      setResult(response);
+      const result = await submitPredictionAction(predictionId, guess.trim());
       
-      if (response.success) {
-        // Clear form and refresh data
+      if (result.success) {
+        if (result.isCorrect) {
+          toast({
+            title: "Correct Prediction! 🎉",
+            description: "Congratulations! You earned bonus points for the correct answer.",
+          });
+        } else {
+          toast({
+            title: "Prediction Submitted",
+            description: "Your prediction has been recorded. Good luck!",
+          });
+        }
         setGuess('');
-        const data = await getPredictionDetails(predictionId, page);
-        setPrediction(data.prediction);
-        setUserPredictions(data.userPredictions);
-        setCurrentUserPrediction(data.currentUserPrediction || null);
-        setCurrentUserId(data.currentUserId || null);
+        
+        // Refresh data with optimistic update
+        startTransition(() => {
+          loadPredictionData();
+        });
         
         // Refresh user points in navigation
         if ((window as any).refreshUserData) {
           (window as any).refreshUserData();
         }
-
-        // Clear result message after 5 seconds
-        setTimeout(() => setResult(null), 5000);
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to submit prediction",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Submit prediction error:', error);
-      setResult({ success: false, message: 'An error occurred. Please try again.' });
+      toast({
+        title: "Error",
+        description: "An error occurred while submitting your prediction",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    startTransition(() => {
+      router.push(`/predictions/${predictionId}?page=${newPage}`);
+    });
   };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const renderPredictionText = (userPred: UserPrediction) => {
-    // Show actual guess only for current user, otherwise show ***
-    if (currentUserId && userPred.user.id === currentUserId) {
-      return userPred.guess;
-    }
-    return "***";
-  };
-
-  const getPredictionCardClassName = (userPred: UserPrediction) => {
-    let baseClass = "flex items-center justify-between p-4 border rounded-lg";
-    
-    // Highlight correct predictions with green background
-    if (isFinished && userPred.isCorrect) {
-      baseClass += " bg-green-50 border-green-200";
-    }
-    
-    return baseClass;
-  };
-
   if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardContent className="text-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading prediction details...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <DashboardLoadingSkeleton />;
   }
 
   if (!prediction) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardContent className="text-center py-10">
-            <Trophy className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Prediction Not Found</h2>
-            <p className="text-muted-foreground mb-4">
-              The prediction you're looking for doesn't exist or has been removed.
-            </p>
-            <Button asChild>
-              <Link href="/predictions">Back to Predictions</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="max-w-4xl mx-auto py-12">
+        <div className="text-center">
+          <Trophy className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Prediction Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            The prediction you're looking for doesn't exist or has been removed.
+          </p>
+          <Button asChild>
+            <Link href="/predictions">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Predictions
+            </Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
-  const isFinished = prediction.status === 'finished';
-  const hasUserPredicted = !!currentUserPrediction;
+  const isActive = prediction.status === 'active';
+  const hasWinner = !!prediction.winnerId;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Back Button */}
-      <Button variant="ghost" asChild>
-        <Link href="/predictions">
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back to Predictions
-        </Link>
-      </Button>
-
-      {/* Prediction Details */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge variant={isFinished ? 'secondary' : 'default'}>
-                  <Clock className="h-3 w-3 mr-1" />
-                  {prediction.status}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/predictions">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{prediction.title}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant={isActive ? 'default' : 'secondary'}>
+                {prediction.status}
+              </Badge>
+              {hasWinner && (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                  <Trophy className="h-3 w-3 mr-1" />
+                  Solved
                 </Badge>
-                <Badge variant="outline">
-                  <Coins className="h-3 w-3 mr-1" />
+              )}
+            </div>
+          </div>
+        </div>
+        <Button onClick={loadPredictionData} variant="outline" size="sm" disabled={isPending}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${isPending ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid gap-8 lg:grid-cols-3">
+        {/* Prediction Details */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Prediction Details
+                </CardTitle>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Coins className="h-3 w-3" />
                   {prediction.pointsCost} points
                 </Badge>
               </div>
-              <CardTitle className="text-2xl">{prediction.title}</CardTitle>
-              <CardDescription className="text-base">
-                {prediction.description}
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          {/* Image */}
-          {prediction.imageUrl && (
-            <div className="mb-6">
-              <img 
-                src={prediction.imageUrl} 
-                alt={prediction.title}
-                className="rounded-lg max-w-full h-auto max-h-96 mx-auto"
-              />
-            </div>
-          )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Image */}
+              {prediction.imageUrl && (
+                <div className="aspect-video relative overflow-hidden rounded-lg">
+                  <img 
+                    src={prediction.imageUrl} 
+                    alt={prediction.title}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+              )}
 
-          {/* Prediction Status */}
-          {isFinished && prediction.winnerId && (
-            <Alert className="mb-6">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Prediction Completed!</strong> A winner has been determined and this prediction is now closed.
-              </AlertDescription>
-            </Alert>
-          )}
+              {/* Description */}
+              <div>
+                <h3 className="font-medium mb-2">Description</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {prediction.description}
+                </p>
+              </div>
 
-          {/* Submission Form or Result */}
-          {!isFinished ? (
-            <Card className="mb-6">
+              {/* Metadata */}
+              <div className="grid gap-4 md:grid-cols-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Created:</span>
+                  <div className="font-medium">
+                    {new Date(prediction.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Entry Cost:</span>
+                  <div className="font-medium">{prediction.pointsCost} points</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Submit Prediction Form */}
+          {isActive && currentUserId && (
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5" />
+                  <Send className="h-5 w-5" />
                   Make Your Prediction
                 </CardTitle>
                 <CardDescription>
-                  Submit your answer to participate. You can predict multiple times if you have enough points!
+                  Submit your answer for a chance to win points! You can predict multiple times.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {result?.message && (
-                    <Alert variant={result.success ? "default" : "destructive"}>
-                      <AlertDescription>
-                        {result.success && result.isCorrect && <CheckCircle className="h-4 w-4 inline mr-2" />}
-                        {result.success && !result.isCorrect && <XCircle className="h-4 w-4 inline mr-2" />}
-                        {result.message}
-                        {result.success && result.isCorrect && (
-                          <span className="block mt-1 font-medium">You won {Math.round(prediction.pointsCost * 1.5)} points!</span>
-                        )}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="guess">Your Prediction</Label>
+                  <div>
                     <Input
-                      id="guess"
-                      type="text"
-                      placeholder="Enter your prediction..."
                       value={guess}
                       onChange={(e) => setGuess(e.target.value)}
-                      required
+                      placeholder="Enter your prediction..."
                       disabled={isSubmitting}
+                      className="w-full"
                     />
                   </div>
-
-                  <div className="flex items-center justify-between">
+                  <div className="flex justify-between items-center">
                     <div className="text-sm text-muted-foreground">
-                      Cost: <span className="font-medium">{prediction.pointsCost} points</span>
-                      <br />
-                      Win: <span className="font-medium text-green-600">
-                        {Math.round(prediction.pointsCost * 1.5)} points
-                      </span> (150% if correct)
+                      Cost: {prediction.pointsCost} points • Win: {Math.round(prediction.pointsCost * 1.5)} points
                     </div>
-                    
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmitting || !guess.trim()}
-                      className="min-w-[140px]"
-                    >
-                      {isSubmitting ? 'Submitting...' : 'Submit Prediction'}
+                    <Button type="submit" disabled={isSubmitting || !guess.trim()}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Submit Prediction
+                        </>
+                      )}
                     </Button>
                   </div>
                 </form>
               </CardContent>
             </Card>
-          ) : (
-            <Card className="mb-6">
-              <CardContent className="pt-6 text-center">
-                <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-3" />
-                <h3 className="font-medium text-lg mb-2">Prediction Completed!</h3>
-                <p className="text-muted-foreground">
-                  This prediction has been solved and is now closed.
-                </p>
-              </CardContent>
-            </Card>
           )}
-        </CardContent>
-      </Card>
 
-      {/* User Predictions */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Community Predictions
-              </CardTitle>
-              <CardDescription>
-                See what others are predicting (correct predictions highlighted)
-              </CardDescription>
-            </div>
-            <Badge variant="outline">
-              {userPredictions.length} predictions on this page
-            </Badge>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          {userPredictions.length > 0 ? (
+          {/* User's Previous Prediction */}
+          {currentUserPrediction && (
+            <Alert>
+              <div className="flex items-center gap-2">
+                {currentUserPrediction.isCorrect ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-red-500" />
+                )}
+                <AlertDescription>
+                  <strong>Your prediction:</strong> "{currentUserPrediction.guess}"
+                  {currentUserPrediction.isCorrect ? (
+                    <span className="text-green-700 ml-2">✓ Correct! You won points.</span>
+                  ) : (
+                    <span className="text-muted-foreground ml-2">
+                      Keep trying if you have enough points!
+                    </span>
+                  )}
+                </AlertDescription>
+              </div>
+            </Alert>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Stats</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Total Predictions</span>
+                <span className="font-medium">{userPredictions.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Entry Cost</span>
+                <span className="font-medium">{prediction.pointsCost} points</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Reward</span>
+                <span className="font-medium text-green-600">
+                  {Math.round(prediction.pointsCost * 1.5)} points
+                </span>
+              </div>
+              {hasWinner && (
+                <>
+                  <Separator />
+                  <div className="text-center">
+                    <div className="text-sm text-muted-foreground mb-1">Winner</div>
+                    <div className="flex items-center justify-center gap-2">
+                      <Trophy className="h-4 w-4 text-yellow-500" />
+                      <span className="font-medium">
+                        {(prediction as any).winnerId?.name || 'Unknown'}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* How to Win */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">How to Win</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
+                  1
+                </div>
+                <p>Pay {prediction.pointsCost} points to make a prediction</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
+                  2
+                </div>
+                <p>Submit your answer for this prediction</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
+                  3
+                </div>
+                <p>If correct, win {Math.round(prediction.pointsCost * 1.5)} points!</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
+                  4
+                </div>
+                <p>You can predict multiple times if you have enough points</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* All Predictions */}
+      {userPredictions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              All Predictions ({userPredictions.length})
+            </CardTitle>
+            <CardDescription>
+              See what others have predicted
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              {userPredictions.map((userPred) => (
-                <div key={userPred.id} className={getPredictionCardClassName(userPred)}>
+              {userPredictions.map((userPrediction) => (
+                <div key={userPrediction.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={userPred.user.avatarUrl} alt={userPred.user.name} />
-                      <AvatarFallback>{getInitials(userPred.user.name)}</AvatarFallback>
+                      <AvatarImage src={userPrediction.user.avatarUrl} />
+                      <AvatarFallback className="text-xs">
+                        {getInitials(userPrediction.user.name)}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{userPred.user.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        "{renderPredictionText(userPred)}"
+                      <p className="font-medium text-sm">{userPrediction.user.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        "{userPrediction.guess}"
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(userPred.createdAt).toLocaleDateString()}
-                    </p>
-                    {isFinished && (
-                      <div className="flex items-center gap-1 mt-1">
-                        {userPred.isCorrect ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
-                        )}
-                        <span className="text-xs font-medium">
-                          {userPred.isCorrect ? 'Correct' : 'Incorrect'}
-                        </span>
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <Badge variant={userPrediction.isCorrect ? 'default' : 'secondary'}>
+                      {userPrediction.isCorrect ? (
+                        <>
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Correct
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="h-3 w-3 mr-1" />
+                          Waiting
+                        </>
+                      )}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(userPrediction.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               ))}
+            </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    asChild
-                  >
-                    <Link href={`/predictions/${predictionId}?page=${page - 1}`}>
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Link>
-                  </Button>
-                  
-                  <span className="text-sm text-muted-foreground px-3">
-                    Page {page} of {totalPages}
-                  </span>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= totalPages}
-                    asChild
-                  >
-                    <Link href={`/predictions/${predictionId}?page=${page + 1}`}>
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">No predictions yet. Be the first to predict!</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1 || isPending}
+                >
+                  Previous
+                </Button>
+                <span className="flex items-center px-3 text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages || isPending}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 } 

@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import StaffLayout from '@/components/staff-layout';
+import AdminStaffLayout from '@/components/admin-staff-layout';
 
 export default async function StaffLayoutWrapper({
   children,
@@ -32,5 +32,5 @@ export default async function StaffLayoutWrapper({
     redirect('/');
   }
 
-  return <StaffLayout>{children}</StaffLayout>;
+  return <AdminStaffLayout>{children}</AdminStaffLayout>;
 } 

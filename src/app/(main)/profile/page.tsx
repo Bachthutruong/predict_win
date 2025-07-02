@@ -93,7 +93,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto">
         <Card>
           <CardContent className="text-center py-10">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -106,7 +106,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto">
         <Card>
           <CardContent className="text-center py-10">
             <p>Unable to load profile data. Please try again.</p>
@@ -117,7 +117,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="mx-auto space-y-8">
       {/* Profile Header */}
       <Card>
         <CardContent className="pt-6">

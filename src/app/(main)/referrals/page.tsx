@@ -91,7 +91,7 @@ export default function ReferralsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto">
         <Card>
           <CardContent className="text-center py-10">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -104,7 +104,7 @@ export default function ReferralsPage() {
 
   if (!currentUser) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto">
         <Card>
           <CardContent className="text-center py-10">
             <p>Unable to load referral data. Please try again.</p>
@@ -115,7 +115,7 @@ export default function ReferralsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="mx-auto space-y-8">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold flex items-center justify-center gap-2">

@@ -1,210 +1,260 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import React from 'react';
 import { useState, useEffect } from 'react';
-
-import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  CheckSquare,
-  Trophy,
-  Users,
-  Lightbulb,
-  ShieldCheck,
-  Gift,
-  HelpCircle,
-  Coins,
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useToast } from '@/hooks/use-toast';
+import { LinkWithPreload } from '@/components/ui/link-with-preload';
+import { 
+  Trophy, 
+  Users, 
+  User as UserIcon, 
+  Home,
+  MessageSquare,
   Menu,
-  X
+  Coins,
+  LogOut,
+  Calendar,
+  Loader2
 } from 'lucide-react';
-import { UserNav } from '@/components/user-nav';
-import { Icons } from '@/components/icons';
-import { Button } from './ui/button';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-import { getUserProfileData } from '@/app/actions';
+import { usePathname, useRouter } from 'next/navigation';
+import { getUserProfileData, logoutAction } from '@/app/actions';
+import { UserNav } from './user-nav';
 import type { User } from '@/types';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const { user: userData } = await getUserProfileData();
-        setUser(userData as User);
-      } catch (error) {
-        console.error('Failed to load user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadUser();
+    
+    // Set up global refresh function for user data
+    (window as any).refreshUserData = loadUser;
+    
+    return () => {
+      delete (window as any).refreshUserData;
+    };
   }, []);
 
-  const navItems = [
-    { href: '/', label: 'Trang chủ', icon: LayoutDashboard },
-    { href: '/predictions', label: 'Dự đoán', icon: Trophy },
-    { href: '/check-in', label: 'Điểm danh', icon: CheckSquare },
-    { href: '/referrals', label: 'Giới thiệu', icon: Gift },
-    { href: '/feedback', label: 'Góp ý', icon: Lightbulb },
+  const loadUser = async () => {
+    try {
+      const { user: userData } = await getUserProfileData();
+      setUser(userData as User);
+    } catch (error) {
+      console.error('Failed to load user:', error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logoutAction();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account.",
+      });
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  // Only user navigation
+  const navigation = [
+    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Predictions', href: '/predictions', icon: Trophy },
+    { name: 'Check In', href: '/check-in', icon: Calendar },
+    { name: 'Profile', href: '/profile', icon: UserIcon },
+    { name: 'Referrals', href: '/referrals', icon: Users },
+    { name: 'Feedback', href: '/feedback', icon: MessageSquare },
   ];
 
-  const adminNavItems = [
-    { href: '/admin-predictions', label: 'Quản lý dự đoán', icon: Trophy },
-    { href: '/questions', label: 'Quản lý câu hỏi', icon: HelpCircle },
-    { href: '/staff', label: 'Quản lý nhân viên', icon: Users },
-    { href: '/users', label: 'Quản lý người dùng', icon: Users },
-    { href: '/grant-points', label: 'Tặng điểm', icon: Coins },
-    { href: '/admin-feedback', label: 'Xem góp ý', icon: ShieldCheck },
-  ];
-
-  const isAdmin = user?.role === 'admin';
-  const isStaff = user?.role === 'staff';
-
-  const staffNavItems = [
-    { href: '/staff-predictions', label: 'Quản lý dự đoán', icon: Trophy },
-    { href: '/staff-questions', label: 'Quản lý câu hỏi', icon: HelpCircle },
-    { href: '/staff-users', label: 'Quản lý người dùng', icon: Users },
-  ];
-
-  const NavContent = () => (
-    <div className="flex-1 overflow-y-auto py-4">
-      <nav className="grid items-start gap-1 px-4 text-sm font-medium">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-              pathname === item.href && 'bg-accent text-primary'
-            )}
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      
-      {isAdmin && (
-        <>
-          <div className="my-4 px-4">
-            <div className="h-px w-full bg-border" />
-          </div>
-          <nav className="grid items-start gap-1 px-4 text-sm font-medium">
-            <p className="px-3 py-2 text-xs font-semibold text-muted-foreground/80">
-              Quản trị viên
-            </p>
-            {adminNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  pathname.startsWith(item.href) && 'bg-accent text-primary'
-                )}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </>
-      )}
-
-      {isStaff && (
-        <>
-          <div className="my-4 px-4">
-            <div className="h-px w-full bg-border" />
-          </div>
-          <nav className="grid items-start gap-1 px-4 text-sm font-medium">
-            <p className="px-3 py-2 text-xs font-semibold text-muted-foreground/80">
-              Nhân viên
-            </p>
-            {staffNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  pathname.startsWith(item.href) && 'bg-accent text-primary'
-                )}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </>
-      )}
-    </div>
-  );
+  const isActive = (href: string) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(href);
+  };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full flex">
-      {/* Desktop Sidebar */}
-      <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r bg-card md:flex">
-        <div className="flex h-16 items-center border-b px-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Icons.logo className="h-6 w-6 text-primary" />
-            <span className="text-lg">PredictWin</span>
-          </Link>
-        </div>
-        <NavContent />
-      </aside>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <Trophy className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                PredictWin
+              </span>
+            </div>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="w-64 p-0 flex flex-col">
-          <div className="flex h-16 items-center border-b px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Icons.logo className="h-6 w-6 text-primary" />
-              <span className="text-lg">PredictWin</span>
-            </Link>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <LinkWithPreload
+                    key={item.name}
+                    href={item.href}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 hover:bg-white/60 ${
+                      isActive(item.href)
+                        ? 'bg-white shadow-sm text-primary border border-primary/20'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.name}
+                  </LinkWithPreload>
+                );
+              })}
+            </nav>
+
+            {/* User Menu & Mobile Menu */}
+            <div className="flex items-center gap-3">
+              <UserNav />
+
+              {/* Mobile menu trigger */}
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="md:hidden">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80">
+                  <div className="py-6">
+                    {/* User Info */}
+                    {user && (
+                      <div className="border-b pb-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={user.avatarUrl} alt={user.name} />
+                            <AvatarFallback>
+                              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold">{user.name}</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Coins className="h-3 w-3" />
+                              <span>{user.points} points</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Navigation Links */}
+                    <nav className="space-y-2">
+                      {navigation.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <LinkWithPreload
+                            key={item.name}
+                            href={item.href}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              isActive(item.href)
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {item.name}
+                          </LinkWithPreload>
+                        );
+                      })}
+                    </nav>
+
+                    {/* Logout */}
+                    {user && (
+                      <div className="mt-6 pt-4 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={handleLogout}
+                          disabled={isLoggingOut}
+                        >
+                          {isLoggingOut ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Logging out...
+                            </>
+                          ) : (
+                            <>
+                              <LogOut className="h-4 w-4 mr-2" />
+                              Logout
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
-          <NavContent />
-        </SheetContent>
-      </Sheet>
+        </div>
+      </header>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col md:pl-64">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
-          {/* Mobile Menu Button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden"
-            onClick={() => setIsMobileMenuOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {children}
+      </main>
 
-          {/* Desktop Logo (hidden on mobile) */}
-          <div className="hidden md:block" />
-          
-          <UserNav />
-        </header>
-        
-        <main className="flex-1 p-4 md:p-6 lg:p-8 bg-gray-50/50">
-          {children}
-        </main>
-      </div>
+      {/* Footer */}
+      <footer className="bg-white/50 backdrop-blur-sm border-t mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-primary" />
+              <span className="font-semibold text-gray-900">PredictWin</span>
+            </div>
+            <div className="text-sm text-gray-600">
+              © 2024 PredictWin. Make predictions, earn points, have fun!
+            </div>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <LinkWithPreload href="/feedback" className="hover:text-primary transition-colors">
+                Feedback
+              </LinkWithPreload>
+              <LinkWithPreload href="/predictions" className="hover:text-primary transition-colors">
+                Predictions
+              </LinkWithPreload>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

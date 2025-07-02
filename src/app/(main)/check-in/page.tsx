@@ -102,7 +102,7 @@ export default function CheckInPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className=" mx-auto space-y-6">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold flex items-center justify-center gap-2">

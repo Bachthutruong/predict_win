@@ -5,13 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { TableLoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { 
   Users, 
   Search, 
   Eye,
   UserCheck,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  RefreshCw
 } from 'lucide-react';
 import { getAllUsers } from '@/app/actions';
 import type { User } from '@/types';
@@ -21,6 +24,7 @@ export default function StaffUsersPage() {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     loadUsers();
@@ -48,6 +52,11 @@ export default function StaffUsersPage() {
       setUsers(regularUsers);
     } catch (error) {
       console.error('Failed to load users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load users. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -55,23 +64,32 @@ export default function StaffUsersPage() {
 
   const verifiedUsers = users.filter(user => user.isEmailVerified);
   const totalPoints = users.reduce((sum, user) => sum + user.points, 0);
+  const averagePoints = users.length > 0 ? Math.round(totalPoints / users.length) : 0;
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Users className="h-8 w-8 text-primary" />
-            Staff: View Users
+            User Management
           </h1>
           <p className="text-muted-foreground mt-2">
-            View and monitor all user accounts (read-only access)
+            Monitor and manage registered users
           </p>
         </div>
+        <Button onClick={loadUsers} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Stats */}
+      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -81,39 +99,20 @@ export default function StaffUsersPage() {
           <CardContent>
             <div className="text-2xl font-bold">{users.length}</div>
             <p className="text-xs text-muted-foreground">
-              Registered users
+              Regular user accounts
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Verified</CardTitle>
+            <CardTitle className="text-sm font-medium">Verified Users</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{verifiedUsers.length}</div>
             <p className="text-xs text-muted-foreground">
-              Email verified
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {users.filter(user => {
-                const created = new Date(user.createdAt);
-                const now = new Date();
-                return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
-              }).length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              New users this month
+              {users.length > 0 ? Math.round((verifiedUsers.length / users.length) * 100) : 0}% verification rate
             </p>
           </CardContent>
         </Card>
@@ -124,11 +123,28 @@ export default function StaffUsersPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {totalPoints.toLocaleString()}
+            <div className="text-2xl font-bold text-primary">{totalPoints.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              {averagePoints} average per user
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {users.filter(user => {
+                const created = new Date(user.createdAt);
+                const now = new Date();
+                return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+              }).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Points in circulation
+              New registrations
             </p>
           </CardContent>
         </Card>
@@ -144,7 +160,7 @@ export default function StaffUsersPage() {
         </CardHeader>
         <CardContent>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name or email..."
               value={searchQuery}
@@ -158,77 +174,79 @@ export default function StaffUsersPage() {
       {/* Users List */}
       <Card>
         <CardHeader>
-          <CardTitle>All Users ({filteredUsers.length})</CardTitle>
+          <CardTitle>Users ({filteredUsers.length})</CardTitle>
           <CardDescription>
-            View all registered user accounts
+            {searchQuery ? `Search results for "${searchQuery}"` : 'All registered users'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-muted-foreground">Loading users...</p>
-            </div>
+            <TableLoadingSkeleton />
           ) : filteredUsers.length > 0 ? (
             <div className="space-y-4">
               {filteredUsers.map((user) => (
-                <div key={user.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                    <img 
-                      src={user.avatarUrl} 
-                      alt={user.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium">{user.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{user.points} points</Badge>
-                        {user.isEmailVerified && (
-                          <Badge variant="default">Verified</Badge>
-                        )}
-                        <Badge variant="secondary">User</Badge>
+                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-medium">
+                        {getInitials(user.name)}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{user.email}</span>
-                      <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
-                      {user.lastCheckIn && (
-                        <span>Last check-in: {new Date(user.lastCheckIn).toLocaleDateString()}</span>
+                      {user.isEmailVerified && (
+                        <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1">
+                          <UserCheck className="h-3 w-3" />
+                        </div>
                       )}
                     </div>
-                                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                       <span>Check-in streak: {user.checkInStreak || 0} days</span>
-                       <span>Total points: {user.points}</span>
-                     </div>
+                    
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{user.name}</h3>
+                        {!user.isEmailVerified && (
+                          <Badge variant="secondary">
+                            Unverified
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                        {user.lastCheckInDate && (
+                          <span>Last check-in {new Date(user.lastCheckInDate).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" disabled>
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Only
-                    </Button>
+                  
+                  <div className="text-right space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="font-mono">
+                        {user.points} pts
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {user.consecutiveCheckIns || 0} day streak
+                    </div>
+                    {user.referralCode && (
+                      <div className="text-xs text-muted-foreground">
+                        Referral: {user.referralCode}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
+            <div className="text-center py-12">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <h3 className="text-lg font-medium mb-2">
+                {searchQuery ? 'No users found' : 'No users yet'}
+              </h3>
               <p className="text-muted-foreground">
-                {searchQuery ? 'No users found matching your search' : 'No users found'}
+                {searchQuery 
+                  ? 'Try adjusting your search query'
+                  : 'Users will appear here once they register'
+                }
               </p>
-              {searchQuery && (
-                <Button 
-                  variant="outline" 
-                  className="mt-2"
-                  onClick={() => setSearchQuery('')}
-                >
-                  Clear Search
-                </Button>
-              )}
             </div>
           )}
         </CardContent>

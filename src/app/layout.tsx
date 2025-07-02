@@ -1,14 +1,18 @@
-import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
-import ClientLayoutWrapper from '@/components/client-layout-wrapper';
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"] });
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import ClientLayoutWrapper from "@/components/client-layout-wrapper";
 
 export const metadata: Metadata = {
-  title: "PredictWin - Prediction Gaming Platform",
-  description: "Make predictions, earn points, and compete with friends on PredictWin!",
+  title: "PredictWin - Win Points by Making Predictions",
+  description: "Join PredictWin and earn points by making accurate predictions. Check in daily, refer friends, and climb the leaderboard!",
+  keywords: ["predictions", "points", "rewards", "games", "trivia"],
+  authors: [{ name: "PredictWin Team" }],
+  openGraph: {
+    title: "PredictWin - Win Points by Making Predictions",
+    description: "Join PredictWin and earn points by making accurate predictions. Check in daily, refer friends, and climb the leaderboard!",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -19,13 +23,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>PredictWin</title>
-        <meta name="description" content="An app for making predictions and earning rewards." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link rel="dns-prefetch" href="https://api.dicebear.com" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
       </head>
-      <body className={inter.className}>
+      <body
+        className="font-sans antialiased min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100"
+        suppressHydrationWarning
+      >
         <ClientLayoutWrapper>
           {children}
         </ClientLayoutWrapper>

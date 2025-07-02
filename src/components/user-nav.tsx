@@ -14,11 +14,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, LogOut, Settings, User as UserIcon, Coins } from 'lucide-react';
+import { CreditCard, LogOut, Settings, User as UserIcon, Coins, Shield, Eye, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
-import { getCurrentUser } from '@/lib/auth';
 import { logoutAction, getUserProfileData } from '@/app/actions';
-import type { AuthUser, User } from '@/types';
+import type { User } from '@/types';
 
 export function UserNav() {
   const [user, setUser] = useState<User | null>(null);
@@ -137,6 +136,7 @@ export function UserNav() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
               <Link href="/profile">
@@ -144,6 +144,7 @@ export function UserNav() {
                 <span>Profile</span>
               </Link>
             </DropdownMenuItem>
+            
             {user.role === 'admin' && (
               <>
                 <DropdownMenuItem asChild>
@@ -160,7 +161,25 @@ export function UserNav() {
                 </DropdownMenuItem>
               </>
             )}
+            
+            {user.role === 'staff' && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link href="/staff-predictions">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Staff Panel</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/staff-users">
+                    <Eye className="mr-2 h-4 w-4" />
+                    <span>Manage Users</span>
+                  </Link>
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuGroup>
+          
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
