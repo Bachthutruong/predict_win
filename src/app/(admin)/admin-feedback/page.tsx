@@ -51,17 +51,23 @@ export default function AdminFeedbackPage() {
   const handleApprove = async (feedbackId: string, points: number) => {
     setProcessingId(feedbackId);
     try {
-      await approveFeedbackAction(feedbackId, points);
-      setApproveDialogOpen(false);
-      setSelectedFeedback(null);
-      loadFeedback();
-      
-      // Refresh user points in navigation
-      if ((window as any).refreshUserData) {
-        (window as any).refreshUserData();
+      const result = await approveFeedbackAction(feedbackId, points);
+      if (result.success) {
+        setApproveDialogOpen(false);
+        setSelectedFeedback(null);
+        loadFeedback();
+        
+        // Refresh user points in navigation
+        if ((window as any).refreshUserData) {
+          (window as any).refreshUserData();
+        }
+      } else {
+        console.error('Failed to approve feedback:', result.message);
+        alert(result.message || 'Failed to approve feedback');
       }
     } catch (error) {
       console.error('Failed to approve feedback:', error);
+      alert('An error occurred while approving feedback');
     } finally {
       setProcessingId(null);
     }
@@ -70,10 +76,16 @@ export default function AdminFeedbackPage() {
   const handleReject = async (feedbackId: string) => {
     setProcessingId(feedbackId);
     try {
-      await rejectFeedbackAction(feedbackId);
-      loadFeedback();
+      const result = await rejectFeedbackAction(feedbackId);
+      if (result.success) {
+        loadFeedback();
+      } else {
+        console.error('Failed to reject feedback:', result.message);
+        alert(result.message || 'Failed to reject feedback');
+      }
     } catch (error) {
       console.error('Failed to reject feedback:', error);
+      alert('An error occurred while rejecting feedback');
     } finally {
       setProcessingId(null);
     }

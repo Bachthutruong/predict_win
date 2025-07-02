@@ -37,25 +37,61 @@ export function FeedbackActions({ item }: { item: Feedback }) {
 
   const handleApprove = async () => {
     setIsLoading(true);
-    await approveFeedbackAction(item.id, points);
-    toast({
-      title: "Feedback Approved",
-      description: `${item.user.name} has been awarded ${points} points.`,
-    });
-    setIsLoading(false);
-    setOpen(false);
-    router.refresh();
+    try {
+      const result = await approveFeedbackAction(item.id, points);
+      if (result.success) {
+        toast({
+          title: "Feedback Approved",
+          description: `${item.user.name} has been awarded ${points} points.`,
+        });
+        setOpen(false);
+        router.refresh();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to approve feedback",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Approve feedback error:', error);
+      toast({
+        title: "Error", 
+        description: "An error occurred while approving feedback",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleReject = async () => {
     setIsRejecting(true);
-    await rejectFeedbackAction(item.id);
-    toast({
-        title: "Feedback Rejected",
+    try {
+      const result = await rejectFeedbackAction(item.id);
+      if (result.success) {
+        toast({
+          title: "Feedback Rejected",
+          variant: "destructive",
+        });
+        router.refresh();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to reject feedback",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Reject feedback error:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while rejecting feedback",
         variant: "destructive",
-    });
-    setIsRejecting(false);
-    router.refresh();
+      });
+    } finally {
+      setIsRejecting(false);
+    }
   }
 
   if (item.status !== 'pending') {

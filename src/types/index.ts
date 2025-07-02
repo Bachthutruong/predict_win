@@ -27,13 +27,18 @@ export type Prediction = {
   status: 'active' | 'finished';
   authorId: string;
   createdAt: string;
-  winnerId?: string;
+  winnerId?: string | {
+    id: string;
+    name: string;
+    avatarUrl: string;
+  };
 };
 
 export type UserPrediction = {
   id: string;
   userId: string;
   user: {
+    id: string;
     name: string;
     avatarUrl: string;
   };
@@ -89,7 +94,7 @@ export type Referral = {
   id: string;
   referrerId: string;
   referredUserId: string;
-  referredUser: { name: string; createdAt: string };
+  referredUser: { name: string; createdAt: string; consecutiveCheckIns: number };
   status: 'pending' | 'completed'; // completed after 3 days check-in
   createdAt: string;
 };

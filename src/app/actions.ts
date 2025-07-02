@@ -1,6 +1,7 @@
 'use server';
 
 // import { suggestBonusPoints, type SuggestBonusPointsInput, type SuggestBonusPointsOutput } from '@/ai/flows/suggest-bonus-points';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import { hashPassword, verifyPassword, setAuthCookie, clearAuthCookie, generateVerificationToken, isValidEmail, getCurrentUser } from '@/lib/auth';
 import { sendVerificationEmail } from '@/lib/email';
@@ -239,14 +240,7 @@ export async function submitPredictionAction(predictionId: string, guess: string
       return { success: false, message: 'Insufficient points' };
     }
 
-    // Check if user already predicted
-    const existingPrediction = await UserPrediction.findOne({
-      userId: user.id,
-      predictionId: predictionId,
-    });
-    if (existingPrediction) {
-      return { success: false, message: 'You have already made a prediction' };
-    }
+    // Allow multiple predictions from the same user if they have enough points
 
     const isCorrect = guess.toLowerCase().trim() === prediction.answer.toLowerCase().trim();
 
@@ -270,9 +264,8 @@ export async function submitPredictionAction(predictionId: string, guess: string
       notes: `Prediction: ${prediction.title}`,
     });
 
-    // If correct, mark prediction as finished and award points
+    // If correct, mark winner but keep prediction active
     if (isCorrect) {
-      prediction.status = 'finished';
       prediction.winnerId = user.id;
       await prediction.save();
 
@@ -302,6 +295,7 @@ export async function getPredictionDetails(predictionId: string, page: number = 
   userPredictions: UserPredictionType[];
   totalPages: number;
   currentUserPrediction?: UserPredictionType;
+  currentUserId?: string;
 }> {
   try {
     const user = await getCurrentUser();
@@ -338,6 +332,7 @@ export async function getPredictionDetails(predictionId: string, page: number = 
         ...currentUserPrediction.toJSON(),
         user: currentUserPrediction.userId,
       }) : undefined,
+      currentUserId: user?.id,
     };
   } catch (error) {
     console.error('Get prediction details error:', error);
@@ -433,7 +428,21 @@ export async function checkInAction(questionId: string, answer: string): Promise
       });
     }
 
-    // Record check-in
+    // Only allow check-in if answer is correct
+    if (!isCorrect) {
+      // Update question stats for incorrect answer
+      await Question.findByIdAndUpdate(questionId, {
+        $inc: { displayCount: 1 },
+      });
+      
+      return { 
+        success: false, 
+        message: 'Incorrect answer. Please try again with the correct answer to check in.',
+        pointsEarned: 0 
+      };
+    }
+
+    // Record successful check-in (only for correct answers)
     await CheckIn.create({
       userId: user.id,
       questionId: questionId,
@@ -447,7 +456,7 @@ export async function checkInAction(questionId: string, answer: string): Promise
     
     return { 
       success: true, 
-      message: isCorrect ? `Correct! You earned ${pointsEarned} points.` : 'Incorrect answer, but thanks for checking in!',
+      message: `Correct! You earned ${pointsEarned} points.`,
       pointsEarned 
     };
   } catch (error) {
@@ -586,22 +595,49 @@ export async function getBonusSuggestion(
 }
 
 export async function getFeedbackItems(): Promise<FeedbackType[]> {
-  await dbConnect();
-  const feedbackItems = await Feedback.find({}).populate<{userId: UserType}>('userId', 'name avatarUrl points id email role').sort({ createdAt: -1 });
-  
-  const serialized = serialize(feedbackItems) as any[];
-  
-  return serialized.map((item: any) => ({
-    ...item,
-    user: item.userId,
-    id: item._id,
-  }));
+  try {
+    await dbConnect();
+    const feedbackItems = await Feedback.find({}).populate<{userId: UserType}>('userId', 'name avatarUrl points id email role').sort({ createdAt: -1 });
+    
+    const serialized = serialize(feedbackItems) as any[];
+    
+    return serialized.map((item: any) => {
+      const id = item.id || item._id?.toString();
+      console.log('Processing feedback item:', { originalId: item._id, convertedId: id, itemKeys: Object.keys(item) });
+      
+      return {
+        ...item,
+        user: item.userId,
+        id: id,
+      };
+    });
+  } catch (error) {
+    console.error('Get feedback items error:', error);
+    return [];
+  }
 }
 
-export async function approveFeedbackAction(feedbackId: string, points: number): Promise<{success: boolean}> {
-  await dbConnect();
-  const feedback = await Feedback.findById(feedbackId);
-  if (feedback) {
+export async function approveFeedbackAction(feedbackId: string, points: number): Promise<{success: boolean, message?: string}> {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      return { success: false, message: 'Admin access required' };
+    }
+
+    console.log('Approve feedback ID:', feedbackId, 'Type:', typeof feedbackId);
+    
+    await dbConnect();
+    
+    // Validate ObjectId format
+    if (!feedbackId || !mongoose.Types.ObjectId.isValid(feedbackId)) {
+      return { success: false, message: 'Invalid feedback ID format' };
+    }
+    
+    const feedback = await Feedback.findById(feedbackId);
+    if (!feedback) {
+      return { success: false, message: 'Feedback not found' };
+    }
+
     feedback.status = 'approved';
     feedback.awardedPoints = points;
     await feedback.save();
@@ -618,18 +654,39 @@ export async function approveFeedbackAction(feedbackId: string, points: number):
     revalidatePath('/admin-feedback');
     revalidatePath('/profile');
     return { success: true };
+  } catch (error) {
+    console.error('Approve feedback error:', error);
+    return { success: false, message: 'Failed to approve feedback' };
   }
-  return { success: false };
 }
 
-export async function rejectFeedbackAction(feedbackId: string): Promise<{success: boolean}> {
-    await dbConnect();
-    const feedback = await Feedback.findByIdAndUpdate(feedbackId, { status: 'rejected' });
-    if (feedback) {
-      revalidatePath('/admin-feedback');
-      return { success: true };
+export async function rejectFeedbackAction(feedbackId: string): Promise<{success: boolean, message?: string}> {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      return { success: false, message: 'Admin access required' };
     }
-    return { success: false };
+
+    console.log('Reject feedback ID:', feedbackId, 'Type:', typeof feedbackId);
+
+    await dbConnect();
+    
+    // Validate ObjectId format
+    if (!feedbackId || !mongoose.Types.ObjectId.isValid(feedbackId)) {
+      return { success: false, message: 'Invalid feedback ID format' };
+    }
+    
+    const feedback = await Feedback.findByIdAndUpdate(feedbackId, { status: 'rejected' });
+    if (!feedback) {
+      return { success: false, message: 'Feedback not found' };
+    }
+    
+    revalidatePath('/admin-feedback');
+    return { success: true };
+  } catch (error) {
+    console.error('Reject feedback error:', error);
+    return { success: false, message: 'Failed to reject feedback' };
+  }
 }
 
 export async function submitFeedbackAction(feedbackText: string): Promise<{success: boolean, message?: string}> {
@@ -705,9 +762,11 @@ export async function grantPointsAction(data: { userId: string, amount: number, 
 
 export async function getPredictions(): Promise<PredictionType[]> {
   await dbConnect();
-  const predictions = await Prediction.find({ status: 'active' }).sort({ createdAt: -1 });
+  const predictions = await Prediction.find({}).populate('winnerId', 'name avatarUrl').sort({ createdAt: -1 });
   return serialize(predictions);
 }
+
+
 
 export async function getAllPredictions(): Promise<PredictionType[]> {
   await dbConnect();
@@ -776,7 +835,10 @@ export async function getReferralsData() {
     await dbConnect();
     const referrals = await Referral.find({ referrerId: user.id }).populate<{referredUserId: UserType}>('referredUserId', 'name createdAt consecutiveCheckIns');
     
-    const serialized = serialize(referrals) as any[];
+    // Filter out referrals where the referred user no longer exists
+    const validReferrals = referrals.filter(r => r.referredUserId);
+    
+    const serialized = serialize(validReferrals) as any[];
     const formatted = serialized.map((r: any) => ({
       ...r,
       referredUser: r.referredUserId,

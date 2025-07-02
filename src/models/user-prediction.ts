@@ -8,8 +8,8 @@ const UserPredictionSchema = new Schema({
   pointsSpent: { type: Number, required: true },
 }, { timestamps: true });
 
-// Ensure a user can only predict once per prediction
-UserPredictionSchema.index({ userId: 1, predictionId: 1 }, { unique: true });
+// Allow multiple predictions from the same user
+// UserPredictionSchema.index({ userId: 1, predictionId: 1 }, { unique: true });
 
 UserPredictionSchema.set('toJSON', {
   transform: (doc, ret) => {

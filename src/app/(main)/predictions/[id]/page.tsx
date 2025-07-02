@@ -24,6 +24,7 @@ export default function PredictionDetailPage() {
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [userPredictions, setUserPredictions] = useState<UserPrediction[]>([]);
   const [currentUserPrediction, setCurrentUserPrediction] = useState<UserPrediction | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +39,7 @@ export default function PredictionDetailPage() {
         setPrediction(data.prediction);
         setUserPredictions(data.userPredictions);
         setCurrentUserPrediction(data.currentUserPrediction || null);
+        setCurrentUserId(data.currentUserId || null);
         setTotalPages(data.totalPages);
       } catch (error) {
         console.error('Failed to load prediction:', error);
@@ -59,16 +61,21 @@ export default function PredictionDetailPage() {
       setResult(response);
       
       if (response.success) {
-        // Refresh data to show updated prediction
+        // Clear form and refresh data
+        setGuess('');
         const data = await getPredictionDetails(predictionId, page);
         setPrediction(data.prediction);
         setUserPredictions(data.userPredictions);
         setCurrentUserPrediction(data.currentUserPrediction || null);
+        setCurrentUserId(data.currentUserId || null);
         
         // Refresh user points in navigation
         if ((window as any).refreshUserData) {
           (window as any).refreshUserData();
         }
+
+        // Clear result message after 5 seconds
+        setTimeout(() => setResult(null), 5000);
       }
     } catch (error) {
       console.error('Submit prediction error:', error);
@@ -80,6 +87,25 @@ export default function PredictionDetailPage() {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const renderPredictionText = (userPred: UserPrediction) => {
+    // Show actual guess only for current user, otherwise show ***
+    if (currentUserId && userPred.user.id === currentUserId) {
+      return userPred.guess;
+    }
+    return "***";
+  };
+
+  const getPredictionCardClassName = (userPred: UserPrediction) => {
+    let baseClass = "flex items-center justify-between p-4 border rounded-lg";
+    
+    // Highlight correct predictions with green background
+    if (isFinished && userPred.isCorrect) {
+      baseClass += " bg-green-50 border-green-200";
+    }
+    
+    return baseClass;
   };
 
   if (isLoading) {
@@ -173,7 +199,7 @@ export default function PredictionDetailPage() {
           )}
 
           {/* Submission Form or Result */}
-          {!hasUserPredicted && !isFinished ? (
+          {!isFinished ? (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -181,14 +207,21 @@ export default function PredictionDetailPage() {
                   Make Your Prediction
                 </CardTitle>
                 <CardDescription>
-                  Submit your answer to participate. You can only predict once!
+                  Submit your answer to participate. You can predict multiple times if you have enough points!
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {result?.message && !result.success && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{result.message}</AlertDescription>
+                  {result?.message && (
+                    <Alert variant={result.success ? "default" : "destructive"}>
+                      <AlertDescription>
+                        {result.success && result.isCorrect && <CheckCircle className="h-4 w-4 inline mr-2" />}
+                        {result.success && !result.isCorrect && <XCircle className="h-4 w-4 inline mr-2" />}
+                        {result.message}
+                        {result.success && result.isCorrect && (
+                          <span className="block mt-1 font-medium">You won {Math.round(prediction.pointsCost * 1.5)} points!</span>
+                        )}
+                      </AlertDescription>
                     </Alert>
                   )}
 
@@ -225,30 +258,17 @@ export default function PredictionDetailPage() {
                 </form>
               </CardContent>
             </Card>
-          ) : hasUserPredicted ? (
+          ) : (
             <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  {currentUserPrediction?.isCorrect ? (
-                    <CheckCircle className="h-8 w-8 text-green-500" />
-                  ) : (
-                    <XCircle className="h-8 w-8 text-red-500" />
-                  )}
-                  <div>
-                    <h3 className="font-medium">
-                      {currentUserPrediction?.isCorrect ? 'Correct Prediction!' : 'Your Prediction Submitted'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      You predicted: <span className="font-medium">"{currentUserPrediction?.guess}"</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(currentUserPrediction?.createdAt || '').toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+              <CardContent className="pt-6 text-center">
+                <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-3" />
+                <h3 className="font-medium text-lg mb-2">Prediction Completed!</h3>
+                <p className="text-muted-foreground">
+                  This prediction has been solved and is now closed.
+                </p>
               </CardContent>
             </Card>
-          ) : null}
+          )}
         </CardContent>
       </Card>
 
@@ -262,7 +282,7 @@ export default function PredictionDetailPage() {
                 Community Predictions
               </CardTitle>
               <CardDescription>
-                See what others are predicting
+                See what others are predicting (correct predictions highlighted)
               </CardDescription>
             </div>
             <Badge variant="outline">
@@ -275,7 +295,7 @@ export default function PredictionDetailPage() {
           {userPredictions.length > 0 ? (
             <div className="space-y-4">
               {userPredictions.map((userPred) => (
-                <div key={userPred.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={userPred.id} className={getPredictionCardClassName(userPred)}>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={userPred.user.avatarUrl} alt={userPred.user.name} />
@@ -284,7 +304,7 @@ export default function PredictionDetailPage() {
                     <div>
                       <p className="font-medium">{userPred.user.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        "{userPred.guess}"
+                        "{renderPredictionText(userPred)}"
                       </p>
                     </div>
                   </div>

@@ -313,46 +313,54 @@ export default function ReferralsPage() {
         <CardContent>
           {referrals.length > 0 ? (
             <div className="space-y-4">
-              {referrals.map((referral) => (
-                <div key={referral.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>{getInitials(referral.referredUser.name)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{referral.referredUser.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Joined {new Date(referral.referredUser.createdAt).toLocaleDateString()}
-                      </p>
+              {referrals.map((referral) => {
+                // Skip if referredUser is null
+                if (!referral.referredUser) {
+                  return null;
+                }
+                
+                return (
+                  <div key={referral.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback>{getInitials(referral.referredUser.name)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{referral.referredUser.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Joined {new Date(referral.referredUser.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <Badge variant={referral.status === 'completed' ? 'default' : 'secondary'}>
+                        {referral.status === 'completed' ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Completed
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="h-3 w-3 mr-1" />
+                            Pending
+                          </>
+                        )}
+                      </Badge>
+                      {referral.status === 'completed' ? (
+                        <p className="text-xs text-green-600 flex items-center">
+                          <Coins className="h-3 w-3 mr-1" />
+                          +100 points earned
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground flex items-center">
+                          <Flame className="h-3 w-3 mr-1" />
+                          Check-in: {referral.referredUser.consecutiveCheckIns || 0}/3 days
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right space-y-1">
-                    <Badge variant={referral.status === 'completed' ? 'default' : 'secondary'}>
-                      {referral.status === 'completed' ? (
-                        <>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Completed
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="h-3 w-3 mr-1" />
-                          Pending
-                        </>
-                      )}
-                    </Badge>
-                    {referral.status === 'completed' ? (
-                      <p className="text-xs text-green-600 flex items-center">
-                        <Coins className="h-3 w-3 mr-1" />
-                        +100 points earned
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        Needs 3 day check-in streak
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">

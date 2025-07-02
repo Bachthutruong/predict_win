@@ -355,7 +355,7 @@ export default function ProfilePage() {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right space-y-1">
                         <Badge variant={referral.status === 'completed' ? 'default' : 'secondary'}>
                           {referral.status === 'completed' ? (
                             <>
@@ -369,8 +369,16 @@ export default function ProfilePage() {
                             </>
                           )}
                         </Badge>
-                        {referral.status === 'completed' && (
-                          <p className="text-xs text-green-600 mt-1">+100 points earned</p>
+                        {referral.status === 'completed' ? (
+                          <p className="text-xs text-green-600 flex items-center">
+                            <Coins className="h-3 w-3 mr-1" />
+                            +100 points earned
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground flex items-center">
+                            <Flame className="h-3 w-3 mr-1" />
+                            Check-in: {referral.referredUser.consecutiveCheckIns || 0}/3 days
+                          </p>
                         )}
                       </div>
                     </div>
