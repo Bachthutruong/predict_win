@@ -125,27 +125,28 @@ export default function AdminPredictionsPage() {
   const finishedPredictions = predictions.filter(p => p.status === 'finished');
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="w-full space-y-4 lg:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Trophy className="h-8 w-8 text-primary" />
-            Admin: Manage Predictions
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+            <Trophy className="h-6 w-6 lg:h-8 lg:w-8 text-primary flex-shrink-0" />
+            <span className="truncate">Admin: Manage Predictions</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm lg:text-base text-muted-foreground mt-1 lg:mt-2">
             Create and manage predictions for users to participate in
           </p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Create Prediction
+              <span className="hidden sm:inline">Create Prediction</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Prediction</DialogTitle>
               <DialogDescription>
@@ -230,16 +231,17 @@ export default function AdminPredictionsPage() {
                 </p>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={() => setIsDialogOpen(false)}
                   disabled={isSubmitting}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                   {isSubmitting ? 'Creating...' : 'Create Prediction'}
                 </Button>
               </div>
@@ -249,7 +251,7 @@ export default function AdminPredictionsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Predictions</CardTitle>
@@ -276,7 +278,7 @@ export default function AdminPredictionsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="sm:col-span-2 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -291,11 +293,19 @@ export default function AdminPredictionsPage() {
       </div>
 
       {/* Predictions List */}
-      <Tabs defaultValue="active" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="active">Active ({activePredictions.length})</TabsTrigger>
-          <TabsTrigger value="finished">Finished ({finishedPredictions.length})</TabsTrigger>
-          <TabsTrigger value="all">All ({predictions.length})</TabsTrigger>
+      <Tabs defaultValue="active" className="space-y-4 lg:space-y-6">
+        <TabsList className="w-full lg:w-auto">
+          <TabsTrigger value="active" className="flex-1 lg:flex-none">
+            <span className="sm:hidden">Active ({activePredictions.length})</span>
+            <span className="hidden sm:inline">Active ({activePredictions.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="finished" className="flex-1 lg:flex-none">
+            <span className="sm:hidden">Done ({finishedPredictions.length})</span>
+            <span className="hidden sm:inline">Finished ({finishedPredictions.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="all" className="flex-1 lg:flex-none">
+            All ({predictions.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active">
@@ -388,7 +398,7 @@ export default function AdminPredictionsPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingPrediction} onOpenChange={(open) => !open && setEditingPrediction(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Prediction</DialogTitle>
             <DialogDescription>
@@ -464,16 +474,17 @@ export default function AdminPredictionsPage() {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex flex-col sm:flex-row gap-2 pt-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setEditingPrediction(null)}
                 disabled={isSubmitting}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting ? 'Updating...' : 'Update Prediction'}
               </Button>
             </div>
@@ -492,10 +503,10 @@ function PredictionCard({
   onEdit: (prediction: Prediction) => void;
 }) {
   return (
-    <div className="flex items-start gap-4 p-4 border rounded-lg">
+    <div className="flex flex-col lg:flex-row lg:items-start gap-4 p-4 border rounded-lg">
       {/* Image */}
       {prediction.imageUrl ? (
-        <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+        <div className="w-full lg:w-20 h-48 lg:h-20 rounded-lg overflow-hidden flex-shrink-0">
           <img 
             src={prediction.imageUrl} 
             alt={prediction.title}
@@ -503,25 +514,22 @@ function PredictionCard({
           />
         </div>
       ) : (
-        <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-          <ImageIcon className="h-8 w-8 text-muted-foreground" />
+        <div className="w-full lg:w-20 h-48 lg:h-20 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <ImageIcon className="h-8 w-8 text-gray-400" />
         </div>
       )}
 
       {/* Content */}
-      <div className="flex-1 space-y-2">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="font-medium line-clamp-1">{prediction.title}</h3>
-            <p className="text-sm text-muted-foreground line-clamp-2">{prediction.description}</p>
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="font-semibold text-lg leading-tight break-words">{prediction.title}</h3>
+            <p className="text-sm text-muted-foreground line-clamp-2 break-words">
+              {prediction.description}
+            </p>
           </div>
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex flex-wrap gap-2 flex-shrink-0">
             <Badge variant={prediction.status === 'active' ? 'default' : 'secondary'}>
-              {prediction.status === 'active' ? (
-                <Clock className="h-3 w-3 mr-1" />
-              ) : (
-                <CheckCircle className="h-3 w-3 mr-1" />
-              )}
               {prediction.status}
             </Badge>
             <Badge variant="outline">
@@ -531,23 +539,19 @@ function PredictionCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Created {new Date(prediction.createdAt).toLocaleDateString()}</span>
-          <div className="flex items-center gap-4">
-            <span>Answer: <span className="font-mono font-medium">"{prediction.answer}"</span></span>
-            {prediction.winnerId && (
-              <span className="text-green-600">Winner found!</span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(prediction)}
-              className="ml-2"
-            >
-              <Edit2 className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium">Answer:</span> {prediction.answer}
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onEdit(prediction)}
+            className="w-full sm:w-auto"
+          >
+            <Edit2 className="h-3 w-3 mr-1" />
+            Edit
+          </Button>
         </div>
       </div>
     </div>

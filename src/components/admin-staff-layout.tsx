@@ -108,14 +108,14 @@ export default function AdminStaffLayout({ children }: { children: React.ReactNo
     return [];
   };
 
-  // Header navigation - basic user menus
+  // Header navigation - basic user menus (responsive for mobile)
   const headerNavigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Predictions', href: '/predictions', icon: Trophy },
-    { name: 'Check In', href: '/check-in', icon: Calendar },
-    { name: 'Profile', href: '/profile', icon: UserIcon },
-    { name: 'Referrals', href: '/referrals', icon: Users },
-    { name: 'Feedback', href: '/feedback', icon: MessageSquare },
+    { name: 'Dashboard', href: '/', icon: Home, shortName: 'Home' },
+    { name: 'Predictions', href: '/predictions', icon: Trophy, shortName: 'Predict' },
+    { name: 'Check In', href: '/check-in', icon: Calendar, shortName: 'Check' },
+    { name: 'Profile', href: '/profile', icon: UserIcon, shortName: 'Profile' },
+    { name: 'Referrals', href: '/referrals', icon: Users, shortName: 'Refer' },
+    { name: 'Feedback', href: '/feedback', icon: MessageSquare, shortName: 'Feedback' },
   ];
 
   const sidebarNavigation = getAdminStaffNavigation();
@@ -145,22 +145,22 @@ export default function AdminStaffLayout({ children }: { children: React.ReactNo
   const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
     <div className={`flex flex-col h-full ${!isMobile ? 'bg-white border-r border-gray-200' : ''}`}>
       {/* Logo */}
-      <div className={`flex items-center flex-shrink-0 ${isMobile ? 'px-6 py-5 border-b' : 'px-6 pt-5 pb-4'}`}>
-        <Trophy className="h-8 w-8 text-primary" />
-        <span className="ml-2 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <div className={`flex items-center flex-shrink-0 ${isMobile ? 'px-4 py-4 border-b' : 'px-4 lg:px-6 pt-4 lg:pt-5 pb-3 lg:pb-4'}`}>
+        <Trophy className="h-6 w-6 lg:h-8 lg:w-8 text-primary" />
+        <span className="ml-2 text-lg lg:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           PredictWin
         </span>
       </div>
       
       {/* User info */}
       {user && (
-        <div className={`px-6 ${isMobile ? 'py-4 border-b' : 'mt-6'}`}>
+        <div className={`px-4 lg:px-6 ${isMobile ? 'py-3 border-b' : 'mt-4 lg:mt-6'}`}>
           <div className="flex items-center">
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-8 w-8 lg:h-10 lg:w-10">
               <AvatarImage src={user.avatarUrl} alt={user.name} />
-              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+              <AvatarFallback className="text-xs lg:text-sm">{getInitials(user.name)}</AvatarFallback>
             </Avatar>
-            <div className="ml-3 min-w-0">
+            <div className="ml-3 min-w-0 flex-1">
               <p className="text-sm font-medium text-gray-700 truncate">{user.name}</p>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'} className="text-xs">
@@ -179,29 +179,29 @@ export default function AdminStaffLayout({ children }: { children: React.ReactNo
       {/* Management Navigation */}
       {sidebarNavigation.length > 0 && (
         <>
-          <div className="px-6 py-3">
+          <div className="px-4 lg:px-6 py-2 lg:py-3">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {user?.role === 'admin' ? 'Admin Management' : 'Staff Management'}
             </h3>
           </div>
-          <nav className={`flex-1 px-3 space-y-1 ${isMobile ? '' : ''} overflow-y-auto`}>
+          <nav className="flex-1 px-2 lg:px-3 space-y-1 overflow-y-auto">
             {sidebarNavigation.map((item) => {
               const Icon = item.icon;
               return (
                 <LinkWithPreload
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  className={`group flex items-center px-2 lg:px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive(item.href)
                       ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                   onClick={isMobile ? () => setIsMobileMenuOpen(false) : undefined}
                 >
-                  <Icon className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                  <Icon className={`mr-3 h-4 w-4 lg:h-5 lg:w-5 flex-shrink-0 ${
                     isActive(item.href) ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
                   }`} />
-                  <span className="truncate">{item.name}</span>
+                  <span className="truncate text-sm">{item.name}</span>
                 </LinkWithPreload>
               );
             })}
@@ -210,22 +210,23 @@ export default function AdminStaffLayout({ children }: { children: React.ReactNo
       )}
 
       {/* Logout button */}
-      <div className="flex-shrink-0 px-3 pb-4">
+      <div className="flex-shrink-0 px-2 lg:px-3 pb-3 lg:pb-4">
         <Button
           variant="ghost"
+          size="sm"
           className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
           onClick={handleLogout}
           disabled={isLoggingOut}
         >
           {isLoggingOut ? (
             <>
-              <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-              <span className="truncate">Logging out...</span>
+              <Loader2 className="mr-3 h-4 w-4 animate-spin" />
+              <span className="truncate text-sm">Logging out...</span>
             </>
           ) : (
             <>
-              <LogOut className="mr-3 h-5 w-5" />
-              <span className="truncate">Logout</span>
+              <LogOut className="mr-3 h-4 w-4" />
+              <span className="truncate text-sm">Logout</span>
             </>
           )}
         </Button>
@@ -251,7 +252,7 @@ export default function AdminStaffLayout({ children }: { children: React.ReactNo
       <div className="lg:pl-64">
         {/* Mobile header */}
         <header className="lg:hidden bg-white shadow-sm border-b sticky top-0 z-40">
-          <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center justify-between px-3 py-2">
             <Button 
               variant="ghost" 
               size="sm"
@@ -261,24 +262,49 @@ export default function AdminStaffLayout({ children }: { children: React.ReactNo
             </Button>
             
             <div className="flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-primary" />
-              <span className="font-bold text-primary">PredictWin</span>
+              <Trophy className="h-5 w-5 text-primary" />
+              <span className="font-bold text-primary text-sm">PredictWin</span>
             </div>
             
             <UserNav />
+          </div>
+          
+          {/* Mobile horizontal nav */}
+          <div className="border-t bg-white overflow-x-auto">
+            <nav className="flex px-2 py-1 space-x-1 min-w-max">
+              {headerNavigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <LinkWithPreload
+                    key={item.name}
+                    href={item.href}
+                    className={`flex flex-col items-center px-2 py-1 text-xs font-medium transition-colors min-w-[60px] ${
+                      isActive(item.href)
+                        ? 'text-blue-700'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 mb-1 ${
+                      isActive(item.href) ? 'text-blue-600' : 'text-gray-400'
+                    }`} />
+                    <span className="truncate">{item.shortName}</span>
+                  </LinkWithPreload>
+                );
+              })}
+            </nav>
           </div>
         </header>
 
         {/* Desktop header with navigation */}
         <header className="hidden lg:block bg-white shadow-sm border-b sticky top-0 z-30">
-          <div className="px-6 py-4">
+          <div className="px-4 lg:px-6 py-3 lg:py-4">
             {/* Title section */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
+                <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">
                   {user?.role === 'admin' ? 'Admin Dashboard' : 'Staff Dashboard'}
                 </h1>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs lg:text-sm text-gray-600 mt-1">
                   {user?.role === 'admin' 
                     ? 'Manage all aspects of PredictWin'
                     : 'Manage questions, predictions and users'
@@ -289,21 +315,22 @@ export default function AdminStaffLayout({ children }: { children: React.ReactNo
             </div>
             
             {/* Header navigation */}
-            <nav className="flex items-center space-x-1">
+            <nav className="flex items-center space-x-1 overflow-x-auto">
               {headerNavigation.map((item) => {
                 const Icon = item.icon;
                 return (
                   <LinkWithPreload
                     key={item.name}
                     href={item.href}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 hover:bg-gray-50 ${
+                    className={`px-2 lg:px-3 py-2 rounded-lg text-xs lg:text-sm font-medium transition-all duration-200 flex items-center gap-1 lg:gap-2 hover:bg-gray-50 whitespace-nowrap ${
                       isActive(item.href)
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    {item.name}
+                    <Icon className="h-3 w-3 lg:h-4 lg:w-4" />
+                    <span className="hidden sm:inline">{item.name}</span>
+                    <span className="sm:hidden">{item.shortName}</span>
                   </LinkWithPreload>
                 );
               })}
@@ -312,8 +339,8 @@ export default function AdminStaffLayout({ children }: { children: React.ReactNo
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6">
-          <div className="max-w-7xl mx-auto">
+        <main className="p-3 lg:p-4 xl:p-6">
+          <div className="w-full max-w-none lg:max-w-7xl mx-auto">
             {children}
           </div>
         </main>

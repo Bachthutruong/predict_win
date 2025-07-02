@@ -71,26 +71,26 @@ export default function StaffUsersPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-4 lg:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Users className="h-8 w-8 text-primary" />
-            User Management
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+            <Users className="h-6 w-6 lg:h-8 lg:w-8 text-primary flex-shrink-0" />
+            <span className="truncate">User Management</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm lg:text-base text-muted-foreground mt-1 lg:mt-2">
             Monitor and manage registered users
           </p>
         </div>
-        <Button onClick={loadUsers} variant="outline" size="sm">
+        <Button onClick={loadUsers} variant="outline" size="sm" className="w-full sm:w-auto">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -185,9 +185,9 @@ export default function StaffUsersPage() {
           ) : filteredUsers.length > 0 ? (
             <div className="space-y-4">
               {filteredUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
+                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="relative flex-shrink-0">
                       <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-medium">
                         {getInitials(user.name)}
                       </div>
@@ -198,17 +198,17 @@ export default function StaffUsersPage() {
                       )}
                     </div>
                     
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{user.name}</h3>
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <h3 className="font-medium truncate">{user.name}</h3>
                         {!user.isEmailVerified && (
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="self-start">
                             Unverified
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
                         <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
                         {user.lastCheckInDate && (
                           <span>Last check-in {new Date(user.lastCheckInDate).toLocaleDateString()}</span>
@@ -217,20 +217,20 @@ export default function StaffUsersPage() {
                     </div>
                   </div>
                   
-                  <div className="text-right space-y-1">
+                  <div className="flex items-center justify-between sm:justify-end sm:flex-col sm:items-end gap-4 sm:gap-1 flex-shrink-0">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="font-mono">
                         {user.points} pts
                       </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {user.consecutiveCheckIns || 0} day streak
+                    <div className="text-xs text-muted-foreground text-right">
+                      <div>{user.consecutiveCheckIns || 0} day streak</div>
+                      {user.referralCode && (
+                        <div className="truncate max-w-[100px]">
+                          Ref: {user.referralCode}
+                        </div>
+                      )}
                     </div>
-                    {user.referralCode && (
-                      <div className="text-xs text-muted-foreground">
-                        Referral: {user.referralCode}
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}

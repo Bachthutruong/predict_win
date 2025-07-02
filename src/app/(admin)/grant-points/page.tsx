@@ -98,27 +98,28 @@ export default function GrantPointsPage() {
   const totalPointsDeducted = transactions.reduce((sum, t) => sum + (t.amount < 0 ? Math.abs(t.amount) : 0), 0);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="w-full space-y-4 lg:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Coins className="h-8 w-8 text-primary" />
-            Admin: Grant Points
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+            <Coins className="h-6 w-6 lg:h-8 lg:w-8 text-primary flex-shrink-0" />
+            <span className="truncate">Admin: Grant Points</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm lg:text-base text-muted-foreground mt-1 lg:mt-2">
             Manually grant or deduct points for users with detailed tracking
           </p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Grant Points
+              <span className="hidden sm:inline">Grant Points</span>
+              <span className="sm:hidden">Grant</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Grant Points to User</DialogTitle>
               <DialogDescription>
@@ -152,7 +153,7 @@ export default function GrantPointsPage() {
                             <AvatarImage src={user.avatarUrl} alt={user.name} />
                             <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
                           </Avatar>
-                          <span>{user.name}</span>
+                          <span className="truncate">{user.name}</span>
                           <Badge variant="outline" className="text-xs">
                             {user.points} pts
                           </Badge>
@@ -219,18 +220,20 @@ export default function GrantPointsPage() {
                 </Alert>
               )}
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={() => setIsDialogOpen(false)}
                   disabled={isSubmitting}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={isSubmitting || !grantData.userId || grantData.amount === 0}
+                  className="w-full sm:w-auto"
                 >
                   {isSubmitting ? 'Processing...' : grantData.amount > 0 ? 'Grant Points' : 'Deduct Points'}
                 </Button>
@@ -241,7 +244,7 @@ export default function GrantPointsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
@@ -298,10 +301,15 @@ export default function GrantPointsPage() {
       </div>
 
       {/* Users & Transactions */}
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="users">Users ({users.length})</TabsTrigger>
-          <TabsTrigger value="transactions">Recent Transactions ({transactions.length})</TabsTrigger>
+      <Tabs defaultValue="users" className="space-y-4 lg:space-y-6">
+        <TabsList className="w-full lg:w-auto">
+          <TabsTrigger value="users" className="flex-1 lg:flex-none">
+            Users ({users.length})
+          </TabsTrigger>
+          <TabsTrigger value="transactions" className="flex-1 lg:flex-none">
+            <span className="hidden sm:inline">Transactions ({transactions.length})</span>
+            <span className="sm:hidden">History ({transactions.length})</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -316,18 +324,18 @@ export default function GrantPointsPage() {
               {users.length > 0 ? (
                 <div className="space-y-4">
                   {users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
+                    <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Avatar className="h-10 w-10 flex-shrink-0">
                           <AvatarImage src={user.avatarUrl} alt={user.name} />
                           <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{user.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between sm:justify-end gap-3">
                         <div className="text-right">
                           <p className="font-bold text-lg">{user.points}</p>
                           <p className="text-xs text-muted-foreground">points</p>
@@ -368,16 +376,16 @@ export default function GrantPointsPage() {
               {transactions.length > 0 ? (
                 <div className="space-y-4">
                   {transactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${transaction.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                    <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`p-2 rounded-full flex-shrink-0 ${transaction.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
                           {transaction.amount > 0 ? (
                             <TrendingUp className="h-4 w-4 text-green-600" />
                           ) : (
                             <TrendingDown className="h-4 w-4 text-red-600" />
                           )}
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium">
                             {transaction.amount > 0 ? 'Points Granted' : 'Points Deducted'}
                           </p>
@@ -385,7 +393,7 @@ export default function GrantPointsPage() {
                             To: <span className="font-medium">{transaction.user.name}</span>
                           </p>
                           {transaction.notes && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground break-words">
                               "{transaction.notes}"
                             </p>
                           )}
@@ -394,7 +402,7 @@ export default function GrantPointsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right flex-shrink-0">
                         <p className={`font-bold text-lg ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {transaction.amount > 0 ? '+' : ''}{transaction.amount}
                         </p>
@@ -428,10 +436,10 @@ export default function GrantPointsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Button 
               variant="outline" 
-              className="h-auto flex-col p-4"
+              className="h-auto flex-col p-4 text-center"
               onClick={() => {
                 setGrantData(prev => ({ ...prev, amount: 50, notes: 'Bonus for excellent participation' }));
                 setIsDialogOpen(true);
@@ -444,7 +452,7 @@ export default function GrantPointsPage() {
             
             <Button 
               variant="outline" 
-              className="h-auto flex-col p-4"
+              className="h-auto flex-col p-4 text-center"
               onClick={() => {
                 setGrantData(prev => ({ ...prev, amount: 100, notes: 'Special event reward' }));
                 setIsDialogOpen(true);
@@ -457,7 +465,7 @@ export default function GrantPointsPage() {
             
             <Button 
               variant="outline" 
-              className="h-auto flex-col p-4"
+              className="h-auto flex-col p-4 text-center"
               onClick={() => {
                 setGrantData(prev => ({ ...prev, amount: -25, notes: 'Penalty for inappropriate behavior' }));
                 setIsDialogOpen(true);
@@ -470,7 +478,7 @@ export default function GrantPointsPage() {
             
             <Button 
               variant="outline" 
-              className="h-auto flex-col p-4"
+              className="h-auto flex-col p-4 text-center"
               onClick={() => {
                 setGrantData(prev => ({ ...prev, amount: 0, notes: '' }));
                 setIsDialogOpen(true);

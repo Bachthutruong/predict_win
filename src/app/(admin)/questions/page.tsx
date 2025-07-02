@@ -157,30 +157,32 @@ export default function QuestionsPage() {
   const priorityQuestions = questions.filter(q => q.isPriority);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <HelpCircle className="h-8 w-8 text-primary" />
-            Admin: Manage Questions
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <HelpCircle className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            <span className="hidden sm:inline">Admin: Manage Questions</span>
+            <span className="sm:hidden">Manage Questions</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Create and manage questions for daily check-ins
           </p>
         </div>
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Create Question
+              <span className="hidden sm:inline">Create Question</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Question</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm">
                 Create a new question for daily check-ins. Users will answer to earn points.
               </DialogDescription>
             </DialogHeader>
@@ -264,16 +266,17 @@ export default function QuestionsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={() => setIsCreateDialogOpen(false)}
                   disabled={isSubmitting}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                   {isSubmitting ? 'Creating...' : 'Create Question'}
                 </Button>
               </div>
@@ -283,55 +286,59 @@ export default function QuestionsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Questions</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Questions</CardTitle>
             <HelpCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{questions.length}</div>
+            <div className="text-xl sm:text-2xl font-bold">{questions.length}</div>
             <p className="text-xs text-muted-foreground">
-              All questions created
+              <span className="hidden sm:inline">All questions created</span>
+              <span className="sm:hidden">Total</span>
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Active</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeQuestions.length}</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-600">{activeQuestions.length}</div>
             <p className="text-xs text-muted-foreground">
-              Currently available
+              <span className="hidden sm:inline">Currently available</span>
+              <span className="sm:hidden">Available</span>
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Priority</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Priority</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{priorityQuestions.length}</div>
+            <div className="text-xl sm:text-2xl font-bold text-orange-600">{priorityQuestions.length}</div>
             <p className="text-xs text-muted-foreground">
-              High priority questions
+              <span className="hidden sm:inline">High priority questions</span>
+              <span className="sm:hidden">Priority</span>
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inactive</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Inactive</CardTitle>
             <XCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{inactiveQuestions.length}</div>
+            <div className="text-xl sm:text-2xl font-bold text-red-600">{inactiveQuestions.length}</div>
             <p className="text-xs text-muted-foreground">
-              Disabled questions
+              <span className="hidden sm:inline">Disabled questions</span>
+              <span className="sm:hidden">Disabled</span>
             </p>
           </CardContent>
         </Card>
@@ -339,11 +346,23 @@ export default function QuestionsPage() {
 
       {/* Questions List */}
       <Tabs defaultValue="active" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="active">Active ({activeQuestions.length})</TabsTrigger>
-          <TabsTrigger value="inactive">Inactive ({inactiveQuestions.length})</TabsTrigger>
-          <TabsTrigger value="priority">Priority ({priorityQuestions.length})</TabsTrigger>
-          <TabsTrigger value="all">All ({questions.length})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+          <TabsTrigger value="active" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-1.5 sm:py-2 h-auto whitespace-nowrap">
+            <span className="hidden sm:inline">Active ({activeQuestions.length})</span>
+            <span className="sm:hidden">Act ({activeQuestions.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="inactive" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-1.5 sm:py-2 h-auto whitespace-nowrap">
+            <span className="hidden sm:inline">Inactive ({inactiveQuestions.length})</span>
+            <span className="sm:hidden">Ina ({inactiveQuestions.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="priority" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-1.5 sm:py-2 h-auto whitespace-nowrap">
+            <span className="hidden sm:inline">Priority ({priorityQuestions.length})</span>
+            <span className="sm:hidden">Pri ({priorityQuestions.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="all" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-1.5 sm:py-2 h-auto whitespace-nowrap">
+            <span className="hidden sm:inline">All ({questions.length})</span>
+            <span className="sm:hidden">All ({questions.length})</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active">
@@ -393,10 +412,10 @@ export default function QuestionsPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingQuestion} onOpenChange={(open) => !open && setEditingQuestion(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               Update the question details.
             </DialogDescription>
           </DialogHeader>
@@ -474,16 +493,17 @@ export default function QuestionsPage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setEditingQuestion(null)}
                 disabled={isSubmitting}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting ? 'Updating...' : 'Update Question'}
               </Button>
             </div>
@@ -547,51 +567,54 @@ function QuestionCard({
   onEdit: (question: Question) => void;
 }) {
   return (
-    <div className="flex items-start gap-4 p-4 border rounded-lg">
+    <div className="flex flex-col sm:flex-row sm:items-start gap-4 p-4 border rounded-lg">
       {/* Image */}
-      {question.imageUrl ? (
-        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-          <img 
-            src={question.imageUrl} 
-            alt="Question"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      ) : (
-        <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-          <ImageIcon className="h-6 w-6 text-muted-foreground" />
-        </div>
-      )}
+      <div className="flex sm:block">
+        {question.imageUrl ? (
+          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+            <img 
+              src={question.imageUrl} 
+              alt="Question"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+          </div>
+        )}
+      </div>
 
       {/* Content */}
-      <div className="flex-1 space-y-3">
+      <div className="flex-1 space-y-3 min-w-0">
         <div className="space-y-1">
-          <div className="flex items-start justify-between">
-            <h3 className="font-medium line-clamp-2">{question.questionText}</h3>
-            <div className="flex items-center gap-2 ml-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+            <h3 className="font-medium line-clamp-2 min-w-0 pr-2">{question.questionText}</h3>
+            <div className="flex items-center gap-2 flex-shrink-0">
               {question.isPriority && (
-                <Badge variant="default">
+                <Badge variant="default" className="text-xs">
                   <Star className="h-3 w-3 mr-1" />
-                  Priority
+                  <span className="hidden sm:inline">Priority</span>
+                  <span className="sm:hidden">⭐</span>
                 </Badge>
               )}
-              <Badge variant={question.status === 'active' ? 'default' : 'secondary'}>
+              <Badge variant={question.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                 {question.status === 'active' ? (
                   <CheckCircle className="h-3 w-3 mr-1" />
                 ) : (
                   <XCircle className="h-3 w-3 mr-1" />
                 )}
-                {question.status}
+                <span className="capitalize">{question.status}</span>
               </Badge>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Answer: <span className="font-mono font-medium">"{question.answer}"</span>
           </p>
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-6 text-sm text-muted-foreground">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <Coins className="h-4 w-4" />
             <span>{question.points} points</span>
@@ -604,7 +627,7 @@ function QuestionCard({
             <BarChart3 className="h-4 w-4" />
             <span>{question.correctAnswerCount} correct</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 col-span-2 sm:col-span-1">
             <span>
               {question.displayCount > 0 
                 ? `${Math.round((question.correctAnswerCount / question.displayCount) * 100)}% accuracy`
@@ -615,34 +638,41 @@ function QuestionCard({
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={question.status === 'active'}
-              onCheckedChange={() => onStatusToggle(question.id, question.status)}
-            />
-            <Label className="text-sm">Active</Label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={question.isPriority}
-              onCheckedChange={() => onPriorityToggle(question.id, question.isPriority)}
-            />
-            <Label className="text-sm">Priority</Label>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="flex items-center justify-between sm:justify-start gap-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={question.status === 'active'}
+                onCheckedChange={() => onStatusToggle(question.id, question.status)}
+              />
+              <Label className="text-xs sm:text-sm">Active</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={question.isPriority}
+                onCheckedChange={() => onPriorityToggle(question.id, question.isPriority)}
+              />
+              <Label className="text-xs sm:text-sm">Priority</Label>
+            </div>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(question)}
-          >
-            <Edit2 className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
+          <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(question)}
+              className="text-xs"
+            >
+              <Edit2 className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Edit</span>
+              <span className="sm:hidden">Edit</span>
+            </Button>
 
-          <div className="text-xs text-muted-foreground">
-            Created {new Date(question.createdAt).toLocaleDateString()}
+            <div className="text-xs text-muted-foreground">
+              <span className="hidden sm:inline">Created {new Date(question.createdAt).toLocaleDateString()}</span>
+              <span className="sm:hidden">{new Date(question.createdAt).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
       </div>

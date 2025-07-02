@@ -146,72 +146,77 @@ export default function UserManagementPage() {
   }).length;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Users className="h-8 w-8 text-primary" />
-            Admin: User Management
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            <span className="hidden sm:inline">Admin: User Management</span>
+            <span className="sm:hidden">User Management</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             View and manage all user accounts
           </p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
+            <div className="text-xl sm:text-2xl font-bold">{users.length}</div>
             <p className="text-xs text-muted-foreground">
-              Registered users
+              <span className="hidden sm:inline">Registered users</span>
+              <span className="sm:hidden">Registered</span>
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Verified</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Verified</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{verifiedUsers}</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-600">{verifiedUsers}</div>
             <p className="text-xs text-muted-foreground">
-              Email verified
+              <span className="hidden sm:inline">Email verified</span>
+              <span className="sm:hidden">Verified</span>
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">This Month</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{thisMonthUsers}</div>
+            <div className="text-xl sm:text-2xl font-bold text-blue-600">{thisMonthUsers}</div>
             <p className="text-xs text-muted-foreground">
-              New users
+              <span className="hidden sm:inline">New users</span>
+              <span className="sm:hidden">New</span>
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Points</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Points</CardTitle>
             <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-600">
               {users.reduce((sum, user) => sum + user.points, 0).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              Points in system
+              <span className="hidden sm:inline">Points in system</span>
+              <span className="sm:hidden">Points</span>
             </p>
           </CardContent>
         </Card>
@@ -236,7 +241,7 @@ export default function UserManagementPage() {
               <select
                 value={verificationFilter}
                 onChange={(e) => setVerificationFilter(e.target.value as any)}
-                className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+                className="px-3 py-2 border border-input bg-background rounded-md text-sm min-w-0 flex-1 sm:flex-initial"
               >
                 <option value="all">All Users</option>
                 <option value="verified">Verified Only</option>
@@ -250,8 +255,8 @@ export default function UserManagementPage() {
       {/* Users List */}
       <Card>
         <CardHeader>
-          <CardTitle>Users ({filteredUsers.length})</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Users ({filteredUsers.length})</CardTitle>
+          <CardDescription className="text-sm">
             Manage user accounts and their information
           </CardDescription>
         </CardHeader>
@@ -264,75 +269,81 @@ export default function UserManagementPage() {
           ) : filteredUsers.length > 0 ? (
             <div className="space-y-4">
               {filteredUsers.map((user) => (
-                <div key={user.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                    <img 
-                      src={user.avatarUrl} 
-                      alt={user.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-lg">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                      <img 
+                        src={user.avatarUrl} 
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium">{user.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">User</Badge>
-                        {user.isEmailVerified ? (
-                          <Badge variant="default">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Verified
-                          </Badge>
-                        ) : (
-                          <Badge variant="destructive">
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Unverified
-                          </Badge>
-                        )}
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <h3 className="font-medium truncate">{user.name}</h3>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge variant="outline" className="text-xs">User</Badge>
+                          {user.isEmailVerified ? (
+                            <Badge variant="default" className="text-xs">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Verified</span>
+                              <span className="sm:hidden">✓</span>
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="text-xs">
+                              <XCircle className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Unverified</span>
+                              <span className="sm:hidden">✗</span>
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <Mail className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{user.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Coins className="h-4 w-4" />
+                          <span>{user.points} points</span>
+                        </div>
+                        <span className="hidden sm:inline">Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                        <span className="sm:hidden">{new Date(user.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-4 w-4" />
-                        <span>{user.email}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Coins className="h-4 w-4" />
-                        <span>{user.points} points</span>
-                      </div>
-                      <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
-                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openEditDialog(user)}
+                      className="text-xs"
                     >
                       <Edit2 className="h-4 w-4 mr-1" />
-                      Edit
+                      <span className="hidden sm:inline">Edit</span>
                     </Button>
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
+                        <Button variant="destructive" size="sm" className="text-xs">
                           <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
+                          <span className="hidden sm:inline">Delete</span>
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete User Account</AlertDialogTitle>
-                          <AlertDialogDescription>
+                          <AlertDialogDescription className="text-sm">
                             Are you sure you want to delete {user.name}? This will also delete all their related data including predictions, check-ins, and transactions. This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDelete(user.id, user.name)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Delete
                           </AlertDialogAction>
@@ -359,10 +370,10 @@ export default function UserManagementPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User Account</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               Update user account information and settings.
             </DialogDescription>
           </DialogHeader>
@@ -432,16 +443,17 @@ export default function UserManagementPage() {
               <Label htmlFor="verified">Email Verified</Label>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setEditingUser(null)}
                 disabled={isSubmitting}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting ? 'Updating...' : 'Update User'}
               </Button>
             </div>

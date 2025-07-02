@@ -151,30 +151,32 @@ export default function StaffManagementPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            Admin: Staff Management
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            <span className="hidden sm:inline">Admin: Staff Management</span>
+            <span className="sm:hidden">Staff Management</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Create and manage staff accounts
           </p>
         </div>
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Add Staff
+              <span className="hidden sm:inline">Add Staff</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Staff Account</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm">
                 Create a new staff account with admin privileges.
               </DialogDescription>
             </DialogHeader>
@@ -249,16 +251,17 @@ export default function StaffManagementPage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={() => setIsCreateDialogOpen(false)}
                   disabled={isSubmitting}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                   {isSubmitting ? 'Creating...' : 'Create Staff Account'}
                 </Button>
               </div>
@@ -268,42 +271,44 @@ export default function StaffManagementPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Staff</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{staff.length}</div>
+            <div className="text-xl sm:text-2xl font-bold">{staff.length}</div>
             <p className="text-xs text-muted-foreground">
-              Active staff accounts
+              <span className="hidden sm:inline">Active staff accounts</span>
+              <span className="sm:hidden">Active accounts</span>
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Verified</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Verified</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-xl sm:text-2xl font-bold text-green-600">
               {staff.filter(s => s.isEmailVerified).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Email verified
+              <span className="hidden sm:inline">Email verified</span>
+              <span className="sm:hidden">Verified</span>
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">This Month</CardTitle>
             <Plus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600">
               {staff.filter(s => {
                 const created = new Date(s.createdAt);
                 const now = new Date();
@@ -311,7 +316,8 @@ export default function StaffManagementPage() {
               }).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              New staff this month
+              <span className="hidden sm:inline">New staff this month</span>
+              <span className="sm:hidden">New this month</span>
             </p>
           </CardContent>
         </Card>
@@ -320,8 +326,8 @@ export default function StaffManagementPage() {
       {/* Staff List */}
       <Card>
         <CardHeader>
-          <CardTitle>Staff Members</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Staff Members</CardTitle>
+          <CardDescription className="text-sm">
             Manage all staff accounts and their permissions
           </CardDescription>
         </CardHeader>
@@ -334,63 +340,70 @@ export default function StaffManagementPage() {
           ) : staff.length > 0 ? (
             <div className="space-y-4">
               {staff.map((member) => (
-                <div key={member.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                    <img 
-                      src={member.avatarUrl} 
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                <div key={member.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-lg">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                      <img 
+                        src={member.avatarUrl} 
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium">{member.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">Staff</Badge>
-                        {member.isEmailVerified && (
-                          <Badge variant="default">Verified</Badge>
-                        )}
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <h3 className="font-medium truncate">{member.name}</h3>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge variant="secondary" className="text-xs">Staff</Badge>
+                          {member.isEmailVerified && (
+                            <Badge variant="default" className="text-xs">
+                              <span className="hidden sm:inline">Verified</span>
+                              <span className="sm:hidden">✓</span>
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <Mail className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{member.email}</span>
+                        </div>
+                        <span className="hidden sm:inline">Joined {new Date(member.createdAt).toLocaleDateString()}</span>
+                        <span className="sm:hidden">{new Date(member.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-4 w-4" />
-                        <span>{member.email}</span>
-                      </div>
-                      <span>Joined {new Date(member.createdAt).toLocaleDateString()}</span>
-                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openEditDialog(member)}
+                      className="text-xs"
                     >
                       <Edit2 className="h-4 w-4 mr-1" />
-                      Edit
+                      <span className="hidden sm:inline">Edit</span>
                     </Button>
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
+                        <Button variant="destructive" size="sm" className="text-xs">
                           <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
+                          <span className="hidden sm:inline">Delete</span>
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Staff Account</AlertDialogTitle>
-                          <AlertDialogDescription>
+                          <AlertDialogDescription className="text-sm">
                             Are you sure you want to delete {member.name}? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDelete(member.id, member.name)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Delete
                           </AlertDialogAction>
@@ -412,10 +425,10 @@ export default function StaffManagementPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingStaff} onOpenChange={(open) => !open && setEditingStaff(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Staff Account</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               Update staff account information.
             </DialogDescription>
           </DialogHeader>
@@ -489,17 +502,18 @@ export default function StaffManagementPage() {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setEditingStaff(null)}
                 disabled={isSubmitting}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Updating...' : 'Update Staff Account'}
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+                {isSubmitting ? 'Updating...' : 'Update Staff'}
               </Button>
             </div>
           </form>

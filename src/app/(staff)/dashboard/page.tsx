@@ -74,26 +74,26 @@ export default function StaffDashboard() {
   const activeQuestions = questions.filter(q => q.status === 'active');
 
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-4 lg:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            Staff Dashboard
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-6 w-6 lg:h-8 lg:w-8 text-primary flex-shrink-0" />
+            <span className="truncate">Staff Dashboard</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm lg:text-base text-muted-foreground mt-1 lg:mt-2">
             Monitor user activity, predictions, and system health
           </p>
         </div>
-        <Button onClick={loadDashboardData} variant="outline" size="sm">
+        <Button onClick={loadDashboardData} variant="outline" size="sm" className="w-full sm:w-auto">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
 
       {/* Main Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -148,10 +148,10 @@ export default function StaffDashboard() {
       </div>
 
       {/* Additional Stats */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 lg:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">User Verification Status</CardTitle>
+            <CardTitle className="text-base lg:text-lg">User Verification Status</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -186,7 +186,7 @@ export default function StaffDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Points Overview</CardTitle>
+            <CardTitle className="text-base lg:text-lg">Points Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -210,9 +210,9 @@ export default function StaffDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="md:col-span-2 lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
+            <CardTitle className="text-base lg:text-lg">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -264,16 +264,16 @@ export default function StaffDashboard() {
               .slice(0, 10)
               .map((user, index) => (
                 <div key={user.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-medium flex-shrink-0">
                       {index + 1}
                     </div>
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0 ml-4">
                     <p className="font-medium">{user.points} points</p>
                     <p className="text-xs text-muted-foreground">
                       {user.consecutiveCheckIns || 0} day streak
