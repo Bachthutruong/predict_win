@@ -1,25 +1,32 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI!;
 
 if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable inside .env'
-  );
+  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
 }
 
-/**
- * Global is used here to maintain a cached connection across hot reloads
- * in development. This prevents connections from growing exponentially
- * during API Route usage.
- */
-let cached = (global as any).mongoose;
+// Global connection cache
+interface GlobalMongoose {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+declare global {
+  var mongooseGlobal: GlobalMongoose | undefined;
+}
+
+let cached = globalThis.mongooseGlobal;
 
 if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+  cached = globalThis.mongooseGlobal = { conn: null, promise: null };
 }
 
 async function dbConnect() {
+  if (!cached) {
+    cached = globalThis.mongooseGlobal = { conn: null, promise: null };
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -27,13 +34,34 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      // Connection pooling for better performance
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+      minPoolSize: 5,  // Maintain a minimum of 5 socket connections
+      maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      // Database-level options
+      retryWrites: true,
+      w: 'majority' as const,
+      // Performance optimizations
+      compressors: ['zlib' as const], // Enable compression
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log('✅ Connected to MongoDB with optimized settings');
       return mongoose;
     });
   }
-  cached.conn = await cached.promise;
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    if (cached) {
+      cached.promise = null;
+    }
+    throw e;
+  }
+
   return cached.conn;
 }
 

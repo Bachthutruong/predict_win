@@ -2,22 +2,28 @@ import mongoose, { Schema, models, model } from 'mongoose';
 
 const UserSchema = new Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, index: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['admin', 'staff', 'user'], default: 'user' },
-  points: { type: Number, default: 0 },
+  role: { type: String, enum: ['user', 'admin', 'staff'], default: 'user', index: true },
+  points: { type: Number, default: 0, index: true },
   avatarUrl: { type: String, required: true },
   checkInStreak: { type: Number, default: 0 },
   lastCheckIn: { type: Date },
-  isEmailVerified: { type: Boolean, default: false },
+  isEmailVerified: { type: Boolean, default: false, index: true },
   emailVerificationToken: { type: String },
   emailVerificationExpires: { type: Date },
-  referralCode: { type: String, unique: true },
-  referredBy: { type: Schema.Types.ObjectId, ref: 'User' },
-  consecutiveCheckIns: { type: Number, default: 0 },
-  lastCheckInDate: { type: Date },
+  referralCode: { type: String, unique: true, sparse: true, index: true },
+  referredBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+  consecutiveCheckIns: { type: Number, default: 0, index: true },
+  lastCheckInDate: { type: Date, index: true },
   totalSuccessfulReferrals: { type: Number, default: 0 },
 }, { timestamps: true });
+
+// Compound indexes for better query performance
+UserSchema.index({ email: 1, isEmailVerified: 1 });
+UserSchema.index({ role: 1, createdAt: -1 });
+UserSchema.index({ points: -1, role: 1 });
+UserSchema.index({ consecutiveCheckIns: -1, lastCheckInDate: -1 });
 
 // Generate unique referral code before saving
 UserSchema.pre('save', function(next) {
@@ -34,6 +40,7 @@ UserSchema.set('toJSON', {
     delete ret.__v;
     delete ret.password; // Don't send password in JSON
     delete ret.emailVerificationToken; // Don't send verification token
+    delete ret.emailVerificationExpires;
   },
 });
 

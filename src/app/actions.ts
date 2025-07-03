@@ -28,6 +28,7 @@ import type {
   RegisterData,
   LoginCredentials
 } from '@/types';
+import { getCachedData, invalidateCache } from '@/lib/cache';
 
 // Helper to serialize MongoDB documents
 function serialize<T>(data: any): T {
@@ -482,6 +483,9 @@ export async function createQuestionAction(data: {
     await dbConnect();
     await Question.create(data);
 
+    // Invalidate related cache
+    invalidateCache('question');
+    
     revalidatePath('/questions');
     return { success: true };
   } catch (error) {
@@ -506,6 +510,9 @@ export async function updateQuestionAction(questionId: string, data: {
 
     await dbConnect();
     await Question.findByIdAndUpdate(questionId, data);
+
+    // Invalidate related cache
+    invalidateCache('question');
 
     revalidatePath('/questions');
     return { success: true };
@@ -761,12 +768,16 @@ export async function grantPointsAction(data: { userId: string, amount: number, 
 }
 
 export async function getPredictions(): Promise<PredictionType[]> {
-  await dbConnect();
-  const predictions = await Prediction.find({}).populate('winnerId', 'name avatarUrl').sort({ createdAt: -1 });
-  return serialize(predictions);
+  return getCachedData('all-predictions', async () => {
+    await dbConnect();
+    const predictions = await Prediction.find({})
+      .populate('winnerId', 'name avatarUrl')
+      .select('title description imageUrl status pointsCost createdAt winnerId')
+      .sort({ createdAt: -1 })
+      .lean();
+    return serialize(predictions);
+  }, 60); // Cache for 60 seconds
 }
-
-
 
 export async function getAllPredictions(): Promise<PredictionType[]> {
   await dbConnect();
@@ -775,43 +786,88 @@ export async function getAllPredictions(): Promise<PredictionType[]> {
 }
 
 export async function getQuestions(): Promise<QuestionType[]> {
-  await dbConnect();
-  const questions = await Question.find({}).sort({ createdAt: -1 });
-  return serialize(questions);
+  return getCachedData('all-questions', async () => {
+    await dbConnect();
+    const questions = await Question.find({})
+      .select('questionText imageUrl answer isPriority status displayCount correctAnswerCount points createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+    return serialize(questions);
+  }, 60); // Cache for 60 seconds
 }
 
 export async function getActiveQuestion(): Promise<QuestionType | null> {
+  return getCachedData('active-question', async () => {
     await dbConnect();
-    let question = await Question.findOne({ status: 'active', isPriority: true });
+    let question = await Question.findOne({ status: 'active', isPriority: true }).lean();
     if (!question) {
-        question = await Question.findOne({ status: 'active' });
+      question = await Question.findOne({ status: 'active' }).lean();
     }
     return serialize(question);
+  }, 120); // Cache for 2 minutes
 }
 
 export async function getDashboardStats() {
+  return getCachedData('dashboard-stats', async () => {
     await dbConnect();
-    const totalPointsAwardedPromise = PointTransaction.aggregate([
-        { $match: { amount: { $gt: 0 } } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
-    const activeUsersPromise = User.countDocuments({ role: 'user' });
-    const activePredictionsPromise = Prediction.countDocuments({ status: 'active' });
-    const pendingFeedbackPromise = Feedback.countDocuments({ status: 'pending' });
+    
+    try {
+      // Use aggregation for better performance
+      const [statsResult] = await Promise.all([
+        PointTransaction.aggregate([
+          {
+            $facet: {
+              totalPointsAwarded: [
+                { $match: { amount: { $gt: 0 } } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+              ],
+              activeUsers: [
+                { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'users' } },
+                { $unwind: '$users' },
+                { $match: { 'users.role': 'user' } },
+                { $group: { _id: null, count: { $sum: 1 } } }
+              ]
+            }
+          }
+        ])
+      ]);
 
-    const [totalPointsResult, activeUsers, activePredictions, pendingFeedback] = await Promise.all([
-        totalPointsAwardedPromise,
-        activeUsersPromise,
-        activePredictionsPromise,
-        pendingFeedbackPromise
-    ]);
+      // Get counts in parallel
+      const [activePredictions, pendingFeedback] = await Promise.all([
+        Prediction.countDocuments({ status: 'active' }),
+        Feedback.countDocuments({ status: 'pending' })
+      ]);
 
-    return {
+      const totalPointsAwarded = statsResult[0]?.totalPointsAwarded[0]?.total || 0;
+      const activeUsers = await User.countDocuments({ role: 'user' }); // Fallback to simple count
+
+      return {
+        totalPointsAwarded,
+        activeUsers,
+        activePredictions,
+        pendingFeedback
+      };
+    } catch (error) {
+      console.error('Dashboard stats error:', error);
+      // Fallback to original implementation
+      const [totalPointsResult, activeUsers, activePredictions, pendingFeedback] = await Promise.all([
+        PointTransaction.aggregate([
+          { $match: { amount: { $gt: 0 } } },
+          { $group: { _id: null, total: { $sum: '$amount' } } }
+        ]),
+        User.countDocuments({ role: 'user' }),
+        Prediction.countDocuments({ status: 'active' }),
+        Feedback.countDocuments({ status: 'pending' })
+      ]);
+
+      return {
         totalPointsAwarded: totalPointsResult[0]?.total || 0,
         activeUsers,
         activePredictions,
         pendingFeedback
-    };
+      };
+    }
+  }, 30); // Cache for 30 seconds
 }
 
 export async function getUserProfileData() {
@@ -819,13 +875,46 @@ export async function getUserProfileData() {
     if (!user) return { user: null, transactions: [] };
 
     await dbConnect();
-    const userDoc = await User.findById(user.id);
-    const transactions = await PointTransaction.find({ userId: user.id }).sort({ createdAt: -1 });
     
-    return { 
-      user: serialize(userDoc), 
-      transactions: serialize(transactions) 
-    };
+    try {
+        // Use aggregation to get user and transactions in one query
+        const [userWithTransactions] = await User.aggregate([
+            { $match: { _id: new mongoose.Types.ObjectId(user.id) } },
+            {
+                $lookup: {
+                    from: 'pointtransactions',
+                    localField: '_id',
+                    foreignField: 'userId',
+                    as: 'transactions',
+                    pipeline: [
+                        { $sort: { createdAt: -1 } },
+                        { $limit: 20 } // Only get recent transactions for better performance
+                    ]
+                }
+            }
+        ]);
+
+        if (!userWithTransactions) {
+            return { user: null, transactions: [] };
+        }
+
+        return { 
+            user: serialize(userWithTransactions), 
+            transactions: serialize(userWithTransactions.transactions || [])
+        };
+    } catch (error) {
+        console.error('Profile data error:', error);
+        // Fallback to original implementation
+        const userDoc = await User.findById(user.id);
+        const transactions = await PointTransaction.find({ userId: user.id })
+            .sort({ createdAt: -1 })
+            .limit(20);
+        
+        return { 
+            user: serialize(userDoc), 
+            transactions: serialize(transactions) 
+        };
+    }
 }
 
 export async function getReferralsData() {
@@ -833,19 +922,70 @@ export async function getReferralsData() {
     if (!user) return { referrals: [], currentUser: null };
 
     await dbConnect();
-    const referrals = await Referral.find({ referrerId: user.id }).populate<{referredUserId: UserType}>('referredUserId', 'name createdAt consecutiveCheckIns');
     
-    // Filter out referrals where the referred user no longer exists
-    const validReferrals = referrals.filter(r => r.referredUserId);
-    
-    const serialized = serialize(validReferrals) as any[];
-    const formatted = serialized.map((r: any) => ({
-      ...r,
-      referredUser: r.referredUserId,
-      id: r._id
-    }));
+    try {
+        // Use aggregation for better performance
+        const [userWithReferrals] = await User.aggregate([
+            { $match: { _id: new mongoose.Types.ObjectId(user.id) } },
+            {
+                $lookup: {
+                    from: 'referrals',
+                    localField: '_id',
+                    foreignField: 'referrerId',
+                    as: 'referrals',
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: 'users',
+                                localField: 'referredUserId',
+                                foreignField: '_id',
+                                as: 'referredUser',
+                                pipeline: [
+                                    { $project: { name: 1, createdAt: 1, consecutiveCheckIns: 1 } }
+                                ]
+                            }
+                        },
+                        { $unwind: '$referredUser' },
+                        { $sort: { createdAt: -1 } }
+                    ]
+                }
+            }
+        ]);
 
-    return { referrals: formatted, currentUser: serialize(await User.findById(user.id)) };
+        if (!userWithReferrals) {
+            return { referrals: [], currentUser: null };
+        }
+
+        const referrals = userWithReferrals.referrals || [];
+        const formattedReferrals = referrals.map((r: any) => ({
+            ...r,
+            id: r._id,
+            referredUser: r.referredUser
+        }));
+
+        return { 
+            referrals: serialize(formattedReferrals), 
+            currentUser: serialize(userWithReferrals) 
+        };
+    } catch (error) {
+        console.error('Referrals data error:', error);
+        // Fallback to original implementation
+        const referrals = await Referral.find({ referrerId: user.id })
+            .populate('referredUserId', 'name createdAt consecutiveCheckIns');
+        
+        const validReferrals = referrals.filter(r => r.referredUserId);
+        const serialized = serialize(validReferrals) as any[];
+        const formatted = serialized.map((r: any) => ({
+            ...r,
+            referredUser: r.referredUserId,
+            id: r._id
+        }));
+
+        return { 
+            referrals: formatted, 
+            currentUser: serialize(await User.findById(user.id)) 
+        };
+    }
 }
 
 // STAFF MANAGEMENT ACTIONS
